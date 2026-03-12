@@ -1,4 +1,4 @@
-## Sophos NIS2 Explorer
+## Sophos NIS2 Compliance Explorer
 
 Interactive web-based explorer that maps the **Sophos Central Platform** (services, controls, threat intelligence, data lake and AI-assisted workflows) to **EU NIS2 Chapter IV** requirements (and Austrian **NISG** references).  
 The app is optimized for **presales / consulting conversations**, supports **DE/EN UI**, and can be embedded into other pages via `iframe` including a `postMessage` API.
@@ -106,7 +106,7 @@ Example listener in the embedding page:
 - Information published on the website is **not** legal advice, compliance advice, or a formal cyber risk quantification.
 ---
 
-## Sophos NIS2 Explorer (Deutsch)
+## Sophos NIS2 Compliance Explorer(Deutsch)
 
 Interaktiver, webbasierten Explorer, der die **Sophos Central Platform** (Services, Kontrollen, Threat Intelligence, Data Lake sowie AI- und Agenten-Workflows) mit den Anforderungen aus **EU NIS2 Kapitel IV** verknüpft (inklusive österreichischer **NISG**-Referenzen).  
 Die Anwendung ist für **Presales- und Beratungsgespräche** optimiert, unterstützt **DE/EN-Oberfläche** und kann per `iframe` in andere Seiten eingebettet werden (inkl. `postMessage`-API).
