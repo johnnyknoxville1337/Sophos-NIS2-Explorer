@@ -19,7 +19,7 @@
   Empfohlener Einbettungscode:
   <iframe
     id="nis2Frame"
-    src="/assets/gse-platform-nis2-explorer.html?embed=1"
+    src="https://sophos-nis-2-explorer.vercel.app/?embed=1"
     title="Sophos Central Platform – NIS2-Anforderungen"
     width="100%"
     height="800"
@@ -1962,7 +1962,12 @@
     function showArticleView(articleKey) {
       currentMode = 'article';
       const panel = document.getElementById('detailPanel');
-      const allMappings = getAllMappingsForArticles([articleKey]);
+      let allMappings = getAllMappingsForArticles([articleKey]);
+      // Spezialsicht für Art. 21.2 b): nur MDR & Incident Response berücksichtigen
+      const ARTICLE_21B_FEATURE_IDS = ['managed_services_mdr', 'managed_services_ir'];
+      if (articleKey === 'Art. 21.2 b)') {
+        allMappings = allMappings.filter(m => ARTICLE_21B_FEATURE_IDS.includes(m.gse_feature_id));
+      }
       const ui = UI_LANG[currentLang];
       panel.classList.remove('empty');
       const entry = NISG_RIS[articleKey];
@@ -2006,7 +2011,17 @@
           return;
         }
         const arts = mapping.nis2_articles || [];
-        b.classList.toggle('active', arts.includes(articleKey) && (!stackSelection.size || stackSelection.has(mapping.gse_feature_id)));
+        let shouldBeActive;
+        if (articleKey === 'Art. 21.2 b)') {
+          // Für Art. 21.2 b) ausschließlich MDR und Incident Response hervorheben
+          shouldBeActive = ARTICLE_21B_FEATURE_IDS.includes(mapping.gse_feature_id);
+        } else {
+          shouldBeActive = arts.includes(articleKey);
+        }
+        if (stackSelection && stackSelection.size) {
+          shouldBeActive = shouldBeActive && stackSelection.has(mapping.gse_feature_id);
+        }
+        b.classList.toggle('active', shouldBeActive);
       });
       // Navigation: Klick auf Lösung in der Artikelansicht öffnet deren Detail-View
       const listEl = document.getElementById('articleSolutionList');
