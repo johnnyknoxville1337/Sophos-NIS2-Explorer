@@ -7,14 +7,14 @@ The app helps map the **Sophos Central Platform** (services, controls, threat in
 - concrete **gaps and residual risks**, and
 - the **next PDCA step** (Plan–Do–Check–Act) for risk reduction.
 
-The explorer is designed for **presales / consulting conversations**, can be embedded into other pages via `iframe` (incl. `postMessage` API) and is intended to **evolve continuously**: new requirements, insights from customer projects and Sophos platform capabilities can be iteratively added to keep the conversation about “what is the next best step?” current.
+The explorer is designed for **presales / consulting conversations** is intended to **evolve continuously**: new requirements, insights from customer projects and Sophos platform capabilities can be iteratively added to keep the conversation about “what is the next best step?” current.
 
 - **Key features for compliance & maturity work**
   - Interactive layer view of the Sophos Central Platform (Services, Threat Prevention & Controls, Threat Intelligence, Data Lake, AI & agentic workflows) as **control landscape** for NIS2
   - Detail panel to support **structured NIS2 compliance analysis** with:
     - mapped Sophos solutions per feature as **implementation options for controls**
     - mapped NIS2 Chapter IV articles and Austrian NISG references (RIS link) as **compliance anchor**
-    - PDCA cycle view (Plan–Do–Check–Act) for the selected solution to identify the **next action in the Blindow-Check / PDCA rhythm**
+    - PDCA cycle view (Plan–Do–Check–Act) for the selected solution to identify the **next action in the PDCA rhythm**
     - heuristic risk reduction calculator for the next PDCA step to **estimate maturity and residual risk** (not legal/insurance advice)
     - presales collateral text (opportunity snippet) copyable to clipboard as **conversation documentation**
   - Stack mode for combining multiple solutions and viewing joint NIS2 coverage to **discuss alternative target architectures**
@@ -30,35 +30,7 @@ The explorer is designed for **presales / consulting conversations**, can be emb
 
 #### Local usage
 
-You can open `index.html` directly in a browser, but for full functionality (and modern browser security defaults) it is recommended to serve it via a small HTTP server:
-
-```bash
-cd Sophos-NIS2-Explorer
-python3 -m http.server 8000
-```
-
-Then open:
-
-```text
-http://localhost:8000/index.html
-```
-
-#### Embedding via iframe
-
-The explorer is designed to be embedded into other web applications / portals, e.g.:
-
-```html
-<iframe
-  id="nis2Frame"
-  src="/assets/gse-platform-nis2-explorer.html?embed=1"
-  title="Sophos Central Platform – NIS2 requirements"
-  width="100%"
-  height="800"
-  style="border: none; max-width: 1280px;"
-  loading="lazy"
-  sandbox="allow-scripts allow-same-origin"
-></iframe>
-```
+You can open `index.html` directly in a browser.
 
 **URL parameters**
 
@@ -80,31 +52,6 @@ You can combine parameters, for example:
 - `data_controls_email`, `data_controls_network`, `data_controls_cloud`
 - `integrations`, `secops_xdr`, `secops_edr`, `secops_itdr`, `secops_ndr`, `workspace_protection`
 - `threat_intel_xops`, `threat_intel_ai`, `adaptive_attack_protection`, `active_threat_response`, `data_lake`, `ai_agentic_workflows`
-
-#### postMessage API
-
-When embedded, the explorer sends messages to the parent window:
-
-- `ready` – once initialized, with a list of available feature IDs
-- `select` – when a feature is selected, with its id, label, solution and NIS2 articles
-- `resize` – when the internal height changes, so the parent can resize the iframe
-
-Example listener in the embedding page:
-
-```html
-<script>
-  window.addEventListener('message', (e) => {
-    if (e.data?.source !== 'nis2-explorer') return;
-    if (e.data.type === 'resize') {
-      document.getElementById('nis2Frame').style.height =
-        e.data.data.height + 'px';
-    }
-    if (e.data.type === 'select') {
-      console.log('Selected:', e.data.data.label, e.data.data.nis2_articles);
-    }
-  });
-</script>
-```
 
 ### Disclaimers
 
@@ -128,7 +75,7 @@ Der Explorer ist für **Presales- und Beratungsgespräche** optimiert, unterstü
   - Detailbereich zur Unterstützung einer **strukturierten NIS2-Compliance-Analyse** mit:
     - zugeordneten Sophos-Lösungen pro Plattform-Element als **Umsetzungsoptionen für Kontrollen**
     - zugeordneten NIS2-Kapitel-IV-Artikeln und österreichischen NISG-Verweisen (inkl. RIS-Link) als **Compliance-Verankerung**
-    - PDCA-Zyklus (Plan–Do–Check–Act) für die gewählte Lösung, um den **nächsten Schritt im Blindow-Check-/PDCA-Rhythmus** zu identifizieren
+    - PDCA-Zyklus (Plan–Do–Check–Act) für die gewählte Lösung, um den **nächsten Schritt im PDCA-Rhythmus** zu identifizieren
     - heuristischem Risikoreduktions-Rechner für den nächsten PDCA-Schritt, um **Reifegrad und Restrisiko abzuschätzen** (keine Rechts-/Versicherungsberatung)
     - Presales-Textbausteinen („Opportunity Snippet“) zum Kopieren in die Zwischenablage als **Dokumentations- und Gesprächsgrundlage**
   - Stack-Ansicht zum Kombinieren mehrerer Lösungen und gemeinsamer NIS2-Abdeckung, um **Zielarchitekturen und Alternativen zu diskutieren**
@@ -144,18 +91,7 @@ Der Explorer ist für **Presales- und Beratungsgespräche** optimiert, unterstü
 
 #### Lokale Nutzung
 
-`index.html` kann direkt im Browser geöffnet werden. Empfohlen ist ein kleiner HTTP-Server:
-
-```bash
-cd Sophos-NIS2-Explorer
-python3 -m http.server 8000
-```
-
-Dann im Browser aufrufen:
-
-```text
-http://localhost:8000/index.html
-```
+`index.html` kann direkt im Browser geöffnet werden.
 
 #### Einbettung per iframe
 
@@ -194,31 +130,6 @@ Parameter können kombiniert werden, z. B.:
 - `data_controls_email`, `data_controls_network`, `data_controls_cloud`
 - `integrations`, `secops_xdr`, `secops_edr`, `secops_itdr`, `secops_ndr`, `workspace_protection`
 - `threat_intel_xops`, `threat_intel_ai`, `adaptive_attack_protection`, `active_threat_response`, `data_lake`, `ai_agentic_workflows`
-
-#### postMessage-API
-
-Im eingebetteten Betrieb sendet der Explorer Nachrichten an das Parent-Fenster:
-
-- `ready` – nach der Initialisierung, inkl. Liste der Feature-IDs
-- `select` – bei Auswahl eines Features (id, Label, Lösung, NIS2-Artikel)
-- `resize` – bei Layout-Änderungen, damit das Parent die iframe-Höhe anpassen kann
-
-Beispiel-Listener in der einbettenden Seite:
-
-```html
-<script>
-  window.addEventListener('message', (e) => {
-    if (e.data?.source !== 'nis2-explorer') return;
-    if (e.data.type === 'resize') {
-      document.getElementById('nis2Frame').style.height =
-        e.data.data.height + 'px';
-    }
-    if (e.data.type === 'select') {
-      console.log('Ausgewählt:', e.data.data.label, e.data.data.nis2_articles);
-    }
-  });
-</script>
-```
 
 ### Hinweise / Disclaimer
 
