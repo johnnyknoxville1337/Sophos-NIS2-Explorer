@@ -1,19 +1,25 @@
 ## Sophos NIS2 Compliance Explorer
 
-Interactive web-based explorer that maps the **Sophos Central Platform** (services, controls, threat intelligence, data lake and AI-assisted workflows) to **EU NIS2 Chapter IV** requirements (and Austrian **NISG** references).  
-The app is optimized for **presales / consulting conversations**, supports **DE/EN UI**, and can be embedded into other pages via `iframe` including a `postMessage` API.
+Interactive web-based workspace for **NIS2 compliance analysis and maturity assessment**.  
+The app helps map the **Sophos Central Platform** (services, controls, threat intelligence, data lake and AI-assisted workflows) to **EU NIS2 Chapter IV** requirements (and Austrian **NISG** references) and supports an **interactive dialogue with the customer** about:
 
-- **Key features**
-  - Interactive layer view of the Sophos Central Platform (Services, Threat Prevention & Controls, Threat Intelligence, Data Lake, AI & agentic workflows)
-  - Detail panel with:
-    - mapped Sophos solutions per feature
-    - mapped NIS2 Chapter IV articles and Austrian NISG references (RIS link)
-    - PDCA cycle view (Plan–Do–Check–Act) for the selected solution
-    - heuristic risk reduction calculator for the next PDCA step (not legal/insurance advice)
-    - presales collateral text (opportunity snippet) copyable to clipboard
-  - Stack mode for combining multiple solutions and viewing joint NIS2 coverage
-  - NIS2 article-centric view (start from an article and see which platform elements support it)
-  - Language toggle (DE/EN) and print-friendly layout for PDF export
+- current **NIS2 maturity level**,
+- concrete **gaps and residual risks**, and
+- the **next PDCA step** (Plan–Do–Check–Act) for risk reduction.
+
+The explorer is designed for **presales / consulting conversations**, can be embedded into other pages via `iframe` (incl. `postMessage` API) and is intended to **evolve continuously**: new requirements, insights from customer projects and Sophos platform capabilities can be iteratively added to keep the conversation about “what is the next best step?” current.
+
+- **Key features for compliance & maturity work**
+  - Interactive layer view of the Sophos Central Platform (Services, Threat Prevention & Controls, Threat Intelligence, Data Lake, AI & agentic workflows) as **control landscape** for NIS2
+  - Detail panel to support **structured NIS2 compliance analysis** with:
+    - mapped Sophos solutions per feature as **implementation options for controls**
+    - mapped NIS2 Chapter IV articles and Austrian NISG references (RIS link) as **compliance anchor**
+    - PDCA cycle view (Plan–Do–Check–Act) for the selected solution to identify the **next action in the Blindow-Check / PDCA rhythm**
+    - heuristic risk reduction calculator for the next PDCA step to **estimate maturity and residual risk** (not legal/insurance advice)
+    - presales collateral text (opportunity snippet) copyable to clipboard as **conversation documentation**
+  - Stack mode for combining multiple solutions and viewing joint NIS2 coverage to **discuss alternative target architectures**
+  - NIS2 article-centric view (start from an article and see which platform elements support it) to **start from customer requirements and goals**
+  - Language toggle (DE/EN) and print-friendly layout for PDF export to **capture the current maturity discussion and next steps**
 
 - **Technology**
   - Pure HTML, CSS and vanilla JavaScript (no build step required)
@@ -102,26 +108,32 @@ Example listener in the embedding page:
 
 ### Disclaimers
 
-- The NIS2 / NISG mappings and the heuristic risk calculator are **illustrative tooling for presales / consulting**.
+- The NIS2 / NISG mappings, the heuristic risk calculator and any maturity indication are **illustrative tooling for presales / consulting**.
 - Information published on the website is **not** legal advice, compliance advice, or a formal cyber risk quantification.
 ---
 
 ## Sophos NIS2 Compliance Explorer(Deutsch)
 
-Interaktiver, webbasierten Explorer, der die **Sophos Central Platform** (Services, Kontrollen, Threat Intelligence, Data Lake sowie AI- und Agenten-Workflows) mit den Anforderungen aus **EU NIS2 Kapitel IV** verknüpft (inklusive österreichischer **NISG**-Referenzen).  
-Die Anwendung ist für **Presales- und Beratungsgespräche** optimiert, unterstützt **DE/EN-Oberfläche** und kann per `iframe` in andere Seiten eingebettet werden (inkl. `postMessage`-API).
+Interaktive, webbasierte Arbeitsoberfläche für **NIS2-Compliance-Analyse und Reifegrad-Erhebung**.  
+Die Anwendung verknüpft die **Sophos Central Platform** (Services, Kontrollen, Threat Intelligence, Data Lake sowie AI- und agentische Workflows) mit den Anforderungen aus **EU NIS2 Kapitel IV** (inklusive österreichischer **NISG**-Referenzen) und unterstützt einen **strukturierten Dialog mit dem Kunden** zu:
 
-- **Kernfunktionen**
-  - Interaktive Layer-Ansicht der Sophos Central Platform (Services, Threat Prevention & Controls, Threat Intelligence, Data Lake, AI & agentische Workflows)
-  - Detailbereich mit:
-    - zugeordneten Sophos-Lösungen pro Plattform-Element
-    - zugeordneten NIS2-Kapitel-IV-Artikeln und österreichischen NISG-Verweisen (inkl. RIS-Link)
-    - PDCA-Zyklus (Plan–Do–Check–Act) für die gewählte Lösung
-    - heuristischem Risikoreduktions-Rechner für den nächsten PDCA-Schritt (keine Rechts-/Versicherungsberatung)
-    - Presales-Textbausteinen („Opportunity Snippet“) zum Kopieren in die Zwischenablage
-  - Stack-Ansicht zum Kombinieren mehrerer Lösungen und gemeinsamer NIS2-Abdeckung
-  - NIS2-Artikel-zentrierte Ansicht (Start beim Artikel, Anzeige der unterstützenden Plattform-Elemente)
-  - Sprachumschaltung (DE/EN) und druckoptimiertes Layout für PDF-Export
+- aktuellem **NIS2-Reifegrad**,
+- konkreten **Lücken und Restrisiken** und
+- dem **nächsten Schritt zur Risikoreduktion** im Sinne des Plan–Do–Check–Act- bzw. Blindow-Check-Rhythmus.
+
+Der Explorer ist für **Presales- und Beratungsgespräche** optimiert, unterstützt eine **DE/EN-Oberfläche** und kann per `iframe` in andere Seiten eingebettet werden (inkl. `postMessage`-API). Er ist bewusst so angelegt, dass er sich **kontinuierlich weiterentwickeln** lässt – z. B. um neue regulatorische Anforderungen, Lessons Learned aus Projekten oder neue Sophos-Plattformfunktionen – damit im Kundengespräch immer der **nächste sinnvolle Schritt im Kontext der Ziele des Kunden** im Fokus steht.
+
+- **Kernfunktionen für Compliance & Reifegrad**
+  - Interaktive Layer-Ansicht der Sophos Central Platform (Services, Threat Prevention & Controls, Threat Intelligence, Data Lake, AI & agentische Workflows) als **Kontroll-Landkarte** im NIS2-Kontext
+  - Detailbereich zur Unterstützung einer **strukturierten NIS2-Compliance-Analyse** mit:
+    - zugeordneten Sophos-Lösungen pro Plattform-Element als **Umsetzungsoptionen für Kontrollen**
+    - zugeordneten NIS2-Kapitel-IV-Artikeln und österreichischen NISG-Verweisen (inkl. RIS-Link) als **Compliance-Verankerung**
+    - PDCA-Zyklus (Plan–Do–Check–Act) für die gewählte Lösung, um den **nächsten Schritt im Blindow-Check-/PDCA-Rhythmus** zu identifizieren
+    - heuristischem Risikoreduktions-Rechner für den nächsten PDCA-Schritt, um **Reifegrad und Restrisiko abzuschätzen** (keine Rechts-/Versicherungsberatung)
+    - Presales-Textbausteinen („Opportunity Snippet“) zum Kopieren in die Zwischenablage als **Dokumentations- und Gesprächsgrundlage**
+  - Stack-Ansicht zum Kombinieren mehrerer Lösungen und gemeinsamer NIS2-Abdeckung, um **Zielarchitekturen und Alternativen zu diskutieren**
+  - NIS2-Artikel-zentrierte Ansicht (Start beim Artikel, Anzeige der unterstützenden Plattform-Elemente), um **ausgehend von Kundenanforderungen und -zielen** zu argumentieren
+  - Sprachumschaltung (DE/EN) und druckoptimiertes Layout für PDF-Export, um die **aktuellen Reifegrad-Ergebnisse und nächsten Schritte festzuhalten**
 
 - **Technologie**
   - Reines HTML, CSS und Vanilla JavaScript (kein Build-Prozess nötig)
@@ -210,5 +222,5 @@ Beispiel-Listener in der einbettenden Seite:
 
 ### Hinweise / Disclaimer
 
-- Die NIS2-/NISG-Mappings und der heuristische Risikorechner dienen als **unterstützendes Werkzeug für Presales- und Beratungsgespräche**.
+- Die NIS2-/NISG-Mappings, der heuristische Risikorechner und jegliche Reifegrad-Indikationen dienen als **unterstützendes Werkzeug für Presales- und Beratungsgespräche**.
 - Informationen auf der Website stellen **keine** Rechtsberatung, Compliance-Beratung oder formale Cyber-Risiko-Quantifizierung dar.
