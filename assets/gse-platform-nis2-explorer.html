@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<!--
+  Einbettung (iframe): Diese Datei kann in anderen Webseiten eingebettet werden.
+
+  URL-Parameter:
+    ?embed=1           Kompakte Darstellung (kleinerer Header, kein min-width)
+    ?lang=en           Englische Oberfläche (Standard: de)
+    ?select=<id>       Element beim Laden vorauswählen (z.B. managed_services_mdr)
+    Kombinierbar:      ?embed=1&lang=en&select=data_controls_firewall
+
+  Verfügbare Feature-IDs für select:
+    managed_services_mdr, managed_services_ir, managed_services_vuln,
+    advisory_services, professional_services,
+    data_controls_endpoint, data_controls_firewall, data_controls_identity,
+    data_controls_email, data_controls_network, data_controls_cloud,
+    integrations, secops_xdr, secops_edr, secops_itdr, secops_ndr, workspace_protection,
+    threat_intel_xops, threat_intel_ai, adaptive_attack_protection, active_threat_response, data_lake, ai_agentic_workflows
+
+  Empfohlener Einbettungscode:
+  <iframe
+    id="nis2Frame"
+    src="/assets/gse-platform-nis2-explorer.html?embed=1"
+    title="Sophos Central Platform – NIS2-Anforderungen"
+    width="100%"
+    height="800"
+    style="border: none; max-width: 1280px;"
+    loading="lazy"
+    sandbox="allow-scripts allow-same-origin"
+  ></iframe>
+
+  postMessage-API (vom iframe an den Parent):
+    { source: 'nis2-explorer', type: 'ready',  data: { features: [...] } }
+    { source: 'nis2-explorer', type: 'select', data: { id, label, solution, nis2_articles } }
+    { source: 'nis2-explorer', type: 'resize', data: { height } }
+
+  Beispiel-Listener im Parent:
+  <script>
+    window.addEventListener('message', (e) => {
+      if (e.data?.source !== 'nis2-explorer') return;
+      if (e.data.type === 'resize') {
+        document.getElementById('nis2Frame').style.height = e.data.data.height + 'px';
+      }
+      if (e.data.type === 'select') {
+        console.log('Ausgewählt:', e.data.data.label);
+      }
+    });
+  </script>
+-->
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOPHOS CENTRAL PLATFORM – NIS2-Anforderungen</title>
+  <script>
+    (function() {
+      if (window.location.search.indexOf('embed=1') !== -1) {
+        document.documentElement.classList.add('embed-mode');
+      }
+    })();
+  </script>
+  <style>
+    :root {
+      --canvas-bg: #150B3E;
+      --layer-services: #2B1D5F;
+      --layer-controls: #402A88;
+      --layer-intel: #5738B1;
+      --layer-datalake: #00A290;
+      --box-bg: #1a1342;
+      --box-border: rgba(255,255,255,0.06);
+      --text: #ffffff;
+      --accent: #a78bfa;
+      --shadow-layer: 0 4px 16px rgba(0,0,0,0.35);
+      --shadow-box: 0 2px 6px rgba(0,0,0,0.3);
+      --layer-footer: #2d234d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      background: var(--canvas-bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Header oberhalb der Layer (eigenes Feld, wie GSE Sophos Solution Map) */
+    .platform-header {
+      text-align: center;
+      padding: 1.5rem 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      position: relative;
+    }
+    .platform-header h1 {
+      margin: 0;
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      color: #fff;
+    }
+    .platform-header .subtitle {
+      margin: 0.6rem 0 0;
+      font-size: 0.9rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: rgba(255,255,255,0.88);
+    }
+    .lang-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .lang-toggle button {
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      border: none;
+      padding: 0.35rem 0.65rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .lang-toggle button:hover {
+      color: rgba(255,255,255,0.8);
+    }
+    .lang-toggle button.active {
+      background: rgba(167,139,250,0.25);
+      color: #fff;
+    }
+    .main {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+    .diagram {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: auto;
+      padding: 1.5rem 2rem 2rem 3rem;
+      max-width: 1200px;
+      min-width: 1160px;
+      margin: 0 auto;
+    }
+    .layer {
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+      box-shadow: var(--shadow-layer);
+    }
+    .layer-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      padding: 1.25rem 1.5rem 1.25rem 2rem;
+      align-items: flex-start;
+    }
+    .layer.layer-services { background: var(--layer-services); }
+    .layer.layer-controls { background: var(--layer-controls); }
+    .layer.layer-intel { background: var(--layer-intel); }
+    .layer.layer-datalake {
+      background: var(--layer-datalake);
+      padding: 1.25rem 1.5rem;
+    }
+    .layer.layer-footer {
+      background: var(--layer-footer);
+      box-shadow: var(--shadow-layer);
+      margin-bottom: 0;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .group {
+      flex: 1;
+      min-width: 200px;
+    }
+    .group-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      color: rgba(255,255,255,0.95);
+    }
+    .boxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      justify-content: center;
+    }
+    /* Services: 4 items per group in 2x2 grid */
+    .layer-services .group .boxes {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    /* Threat Prevention: drei feste Spalten mit Abstand, kein Überlappen */
+    .layer-controls .layer-groups {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(260px, 1fr);
+      gap: 2rem;
+      justify-items: center;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+      min-width: 0;
+    }
+    .layer-controls .group {
+      min-width: 0;
+      width: 100%;
+      max-width: 320px;
+    }
+    .layer-controls .group.integrations {
+      max-width: 320px;
+    }
+    .layer-controls .boxes { justify-content: center; }
+    .layer-controls .group.data-controls .boxes,
+    .layer-controls .group.secops .boxes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      max-width: 300px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    /* Threat Intelligence: 5 items per group, 3 top + 2 bottom */
+    .layer-intel .group .boxes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+    .box {
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--box-border);
+      background: var(--box-bg);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      text-align: center;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+      box-shadow: var(--shadow-box);
+    }
+    .box:hover {
+      background: #251b52;
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      transform: translateY(-2px);
+    }
+    .box.active {
+      background: rgba(167, 139, 250, 0.22);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.35);
+    }
+    .box.placeholder {
+      opacity: 0.9;
+      cursor: default;
+    }
+    .box.placeholder:hover { transform: none; }
+    .layer-banner {
+      background: var(--box-bg);
+      padding: 0.6rem 1.25rem;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.95);
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .datalake-btn {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 1rem 1.25rem;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .datalake-btn:hover { background: rgba(0,0,0,0.12); }
+    .datalake-btn.active { background: rgba(0,0,0,0.2); }
+    .layer-footer-line {
+      display: block;
+      width: 100%;
+      padding: 1rem 1.75rem 1.25rem;
+      font-size: 1rem;
+      font-weight: 500;
+      text-align: center;
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.95);
+      cursor: pointer;
+      border-radius: 0;
+      text-transform: none;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+      transition: background 0.2s;
+    }
+    .layer-footer-line::before {
+      content: '+ ';
+      font-weight: 700;
+      font-size: 1.1em;
+      margin-right: 0.35rem;
+      color: var(--accent);
+      opacity: 0.95;
+    }
+    .layer-footer-line:hover { background: rgba(255,255,255,0.08); }
+    .layer-footer-line.active { background: rgba(167, 139, 250, 0.15); }
+    .layer-controls .group.integrations .boxes {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+    .layer-controls .group.integrations .box {
+      width: 100%;
+      max-width: 100%;
+      min-height: 3.5rem;
+      font-size: 0.82rem;
+      padding: 1rem 1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+    .resize-handle {
+      width: 6px;
+      min-width: 6px;
+      cursor: col-resize;
+      background: transparent;
+      position: relative;
+      z-index: 10;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .resize-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 36px;
+      border-radius: 1px;
+      background: rgba(255,255,255,0.12);
+      transition: background 0.15s, height 0.15s;
+    }
+    .resize-handle:hover::after,
+    .resize-handle.dragging::after {
+      background: var(--accent);
+      height: 56px;
+    }
+    .resize-handle.dragging { background: rgba(167,139,250,0.08); }
+    body.resizing { cursor: col-resize !important; user-select: none !important; }
+
+    .detail-panel {
+      width: 600px;
+      min-width: 300px;
+      max-width: 600px;
+      border-left: 1px solid rgba(255,255,255,0.08);
+      background: linear-gradient(180deg, #1a1242 0%, #151035 100%);
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .detail-panel.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.875rem;
+      text-align: center;
+      padding: 2.5rem;
+      line-height: 1.6;
+    }
+    .detail-panel h2 {
+      margin: 0 0 1rem;
+      font-size: 1.08rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .detail-section { margin-bottom: 1.25rem; }
+    .detail-section:last-child { margin-bottom: 0; }
+    .detail-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.4rem;
+    }
+    .detail-value { font-size: 0.9rem; line-height: 1.5; }
+    .nis2-list { list-style: none; padding: 0; margin: 0; }
+    .subtitle { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 0.75rem; line-height: 1.4; }
+    .nisg-ref { font-size: 0.76rem; margin-top: 0.35rem; line-height: 1.4; color: rgba(255,255,255,0.7); }
+    .nisg-ref a { color: var(--accent); text-decoration: none; }
+    .nisg-ref a:hover { text-decoration: underline; }
+    .req-item {
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .req-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .req-item strong { font-weight: 600; color: rgba(255,255,255,0.95); }
+    .detail-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin: 0.35rem 0 0.9rem;
+    }
+    .detail-actions button {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(21,16,56,0.9);
+      color: rgba(255,255,255,0.9);
+      font-size: 0.72rem;
+      font-weight: 500;
+      padding: 0.32rem 0.7rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .detail-actions button span.icon {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+    .detail-actions button:hover {
+      background: rgba(167,139,250,0.2);
+      border-color: rgba(167,139,250,0.8);
+      transform: translateY(-1px);
+    }
+    .detail-actions button.secondary {
+      background: rgba(255,255,255,0.04);
+    }
+    .detail-actions button.secondary:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    .detail-meta {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 0.4rem;
+    }
+    .detail-meta strong {
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+    }
+    .detail-filter-row {
+      margin-bottom: 0.9rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .detail-filter-row label {
+      font-size: 0.7rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+    }
+    .detail-filter-row select {
+      background: rgba(10,7,30,0.9);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.9);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.8rem 0.25rem 0.6rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .detail-filter-row select:focus {
+      border-color: rgba(167,139,250,0.9);
+      box-shadow: 0 0 0 1px rgba(167,139,250,0.5);
+    }
+    /* NIS2-Artikel-Buttons (Umkehransicht) */
+    .article-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.45rem;
+      margin-bottom: 1rem;
+    }
+    .article-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(21,16,56,0.6);
+      color: rgba(255,255,255,0.95);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    .article-btn:hover {
+      background: rgba(167,139,250,0.15);
+      border-color: rgba(167,139,250,0.5);
+      box-shadow: 0 0 0 1px rgba(167,139,250,0.25);
+    }
+    .article-btn .article-id {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+    .article-btn .article-preview {
+      font-size: 0.7rem;
+      line-height: 1.35;
+      color: rgba(255,255,255,0.75);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .article-solution-btn {
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      padding: 0.15rem 0.2rem;
+      border-radius: 4px;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s;
+    }
+    .article-solution-btn:hover {
+      background: rgba(255,255,255,0.06);
+    }
+    /* PDCA Cycle – visual quadrant layout */
+    .pdca-cycle {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      margin-top: 0.4rem;
+    }
+    .pdca-quadrant {
+      padding: 0.55rem 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-height: 90px;
+      position: relative;
+      overflow: hidden;
+    }
+    .pdca-q-plan {
+      background: linear-gradient(135deg, rgba(77, 210, 230, 0.16) 0%, rgba(18, 10, 50, 0.95) 72%);
+      border-radius: 14px 3px 3px 3px;
+      border: 1px solid rgba(77, 210, 230, 0.2);
+      border-right-color: transparent;
+      border-bottom-color: transparent;
+    }
+    .pdca-q-do {
+      background: linear-gradient(225deg, rgba(0, 180, 160, 0.2) 0%, rgba(18, 10, 50, 0.95) 72%);
+      border-radius: 3px 14px 3px 3px;
+      border: 1px solid rgba(0, 180, 160, 0.2);
+      border-left-color: transparent;
+      border-bottom-color: transparent;
+    }
+    .pdca-q-act {
+      background: linear-gradient(45deg, rgba(130, 60, 230, 0.2) 0%, rgba(18, 10, 50, 0.95) 72%);
+      border-radius: 3px 3px 3px 14px;
+      border: 1px solid rgba(130, 60, 230, 0.2);
+      border-right-color: transparent;
+      border-top-color: transparent;
+    }
+    .pdca-q-check {
+      background: linear-gradient(315deg, rgba(210, 60, 190, 0.2) 0%, rgba(18, 10, 50, 0.95) 72%);
+      border-radius: 3px 3px 14px 3px;
+      border: 1px solid rgba(210, 60, 190, 0.2);
+      border-left-color: transparent;
+      border-top-color: transparent;
+    }
+    .pdca-phase-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .pdca-q-plan .pdca-phase-label  { color: #4dd0e1; }
+    .pdca-q-do .pdca-phase-label    { color: #26a69a; }
+    .pdca-q-act .pdca-phase-label   { color: #b388ff; }
+    .pdca-q-check .pdca-phase-label { color: #ea80fc; }
+    .pdca-content-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 0.35rem 0.45rem;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+    }
+    .pdca-q-plan .pdca-content-card  { border-color: rgba(77, 210, 230, 0.15); }
+    .pdca-q-do .pdca-content-card    { border-color: rgba(0, 180, 160, 0.15); }
+    .pdca-q-act .pdca-content-card   { border-color: rgba(130, 60, 230, 0.15); }
+    .pdca-q-check .pdca-content-card { border-color: rgba(210, 60, 190, 0.15); }
+    .pdca-content-card ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .pdca-content-card li {
+      font-size: 0.67rem;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.78);
+      padding-left: 0.55rem;
+      position: relative;
+      margin-bottom: 0.1rem;
+    }
+    .pdca-content-card li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.35);
+    }
+    .pdca-center-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px;
+      height: 28px;
+      background: var(--canvas-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+    }
+    .pdca-center-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+    .pdca-empty {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.35);
+      font-style: italic;
+    }
+
+    /* Risikokalkulator – nächster PDCA-Schritt */
+    .risk-calc {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin-top: 0.5rem;
+    }
+    .risk-calc-intro {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.75);
+      margin-bottom: 0.6rem;
+      line-height: 1.4;
+    }
+    .risk-calc-intro strong { color: var(--accent); }
+    .risk-calc-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .risk-calc-row label {
+      min-width: 6rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.65);
+    }
+    .risk-calc-row input[type="range"] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,0.12);
+      border-radius: 3px;
+    }
+    .risk-calc-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 0 2px rgba(167,139,250,0.3);
+    }
+    .risk-calc-row .risk-calc-value {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 2rem;
+      text-align: right;
+    }
+    .risk-calc-result {
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.9);
+    }
+    .risk-calc-result strong { color: #a5f3fc; }
+    .risk-calc-result .risk-reduction { color: #86efac; font-weight: 700; }
+    .risk-calc-scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.4rem;
+      margin-bottom: 0.6rem;
+    }
+    .risk-calc-score-item { text-align: center; }
+    .risk-calc-score-item .score-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.15rem;
+    }
+    .risk-calc-score-item .score-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .risk-calc-score-item .score-value.now { color: #fca5a5; }
+    .risk-calc-score-item .score-value.after { color: #a5f3fc; }
+    .risk-calc-score-item .score-value.reduction { color: #86efac; }
+    .risk-calc-loss {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.4rem;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .risk-calc-loss-item { text-align: center; }
+    .risk-calc-loss-item .loss-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 0.15rem;
+    }
+    .risk-calc-loss-item .loss-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .risk-calc-loss-item .loss-value.now { color: #fca5a5; }
+    .risk-calc-loss-item .loss-value.after { color: #86efac; }
+    .risk-calc-note {
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.4);
+      font-style: italic;
+      line-height: 1.35;
+      margin-top: 0.4rem;
+    }
+    .risk-calc-nis2-hint {
+      font-size: 0.63rem;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.35;
+      margin: -0.2rem 0 0.5rem 6.5rem;
+      font-style: italic;
+    }
+    .proof-section {
+      background: linear-gradient(135deg, rgba(0,162,144,0.10) 0%, rgba(21,11,62,0.95) 70%);
+      border: 1px solid rgba(0,162,144,0.25);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+    }
+    /* Auf der Hauptseite ausblenden – nur im PDF/Druck anzeigen (Kontext Rückversicherung) */
+    .proof-section.print-only-proof {
+      display: none !important;
+    }
+    .proof-section .detail-label {
+      color: rgba(0,210,180,0.95);
+    }
+    .proof-section-body {
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.78);
+      margin-bottom: 0.6rem;
+    }
+    .proof-section-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .proof-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(0,162,144,0.4);
+      background: rgba(0,162,144,0.12);
+      color: rgba(255,255,255,0.95);
+      font-size: 0.72rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .proof-cta:hover {
+      background: rgba(0,162,144,0.25);
+      border-color: rgba(0,210,180,0.7);
+      transform: translateY(-1px);
+    }
+    .proof-cta .icon { font-size: 0.85em; }
+
+    /* Embed-Modus: kompakter für iframe (?embed=1) */
+    html.embed-mode body {
+      min-height: auto;
+    }
+    html.embed-mode .platform-header {
+      padding: 0.75rem 1rem 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    html.embed-mode .platform-header h1 {
+      font-size: 1.25rem;
+    }
+    html.embed-mode .platform-header .subtitle {
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+    html.embed-mode .lang-toggle {
+      top: 0.5rem;
+      right: 0.75rem;
+    }
+    html.embed-mode .diagram {
+      padding: 1rem 1.5rem 1.5rem 2rem;
+      min-width: auto;
+    }
+    html.embed-mode .layer-groups {
+      padding: 0.75rem 1rem 0.75rem 1.25rem;
+    }
+    html.embed-mode .layer {
+      margin-bottom: 0.5rem;
+    }
+    @media print {
+      body {
+        background: #ffffff;
+        color: #000000;
+      }
+      .platform-header,
+      .diagram,
+      .resize-handle,
+      .lang-toggle {
+        display: none !important;
+      }
+      .detail-panel {
+        width: 100% !important;
+        max-width: none !important;
+        border-left: none;
+        background: #ffffff;
+        color: #000000;
+        box-shadow: none;
+      }
+      .detail-panel h2 {
+        color: #000000;
+      }
+      .detail-panel .subtitle,
+      .detail-panel .nisg-ref {
+        color: #333333;
+      }
+      .detail-actions button {
+        display: none !important;
+      }
+      .risk-calc-row input[type="range"] {
+        display: none !important;
+      }
+      .pdca-content-card {
+        background: rgba(0,0,0,0.02);
+      }
+      /* Versicherung & Underwriting-Nachweis nur im PDF sichtbar (Kontext Rückversicherung) */
+      .proof-section.print-only-proof {
+        display: block !important;
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        color: #000;
+      }
+      .proof-section.print-only-proof .detail-label {
+        color: #0a5c52;
+        font-weight: 600;
+      }
+      .proof-section.print-only-proof .proof-section-body {
+        color: #333;
+        margin-bottom: 0.5rem;
+      }
+      .proof-section.print-only-proof .proof-section-links {
+        margin-top: 0.5rem;
+      }
+      .proof-section.print-only-proof .proof-cta {
+        color: #0a5c52;
+        border-color: #0a5c52;
+        background: transparent;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <div class="diagram">
+      <!-- Header oberhalb aller Layer (wie GSE Sophos Solution Map) -->
+      <header class="platform-header">
+        <h1>SOPHOS CENTRAL PLATFORM</h1>
+        <p class="subtitle">Managed by Customers | Managed by Partners | Managed by Sophos</p>
+        <div class="lang-toggle">
+          <button type="button" data-lang="de" class="active">DE</button>
+          <button type="button" data-lang="en">EN</button>
+        </div>
+      </header>
+      <!-- Layer 1: SERVICES -->
+      <section class="layer layer-services">
+        <div class="layer-groups">
+          <div class="group">
+            <div class="group-title">Managed Services</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="managed_services_mdr">MDR</button>
+              <button type="button" class="box" data-id="managed_services_ir">Incident Response</button>
+              <button type="button" class="box" data-id="managed_services_vuln">Vulnerability Management</button>
+              <button type="button" class="box placeholder" data-id="professional_services" data-placeholder="1">Professional Services</button>
+            </div>
+          </div>
+          <div class="group">
+            <div class="group-title">Advisory Services</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="advisory_services">Penetration Testing</button>
+              <button type="button" class="box" data-id="advisory_services">Security Assessments</button>
+              <button type="button" class="box" data-id="advisory_services">Red Team Exercises</button>
+              <button type="button" class="box" data-id="advisory_services">Incident Readiness</button>
+            </div>
+          </div>
+        </div>
+        <div class="layer-banner">SERVICES</div>
+      </section>
+
+      <!-- Layer 2: THREAT PREVENTION AND CONTROLS -->
+      <section class="layer layer-controls">
+        <div class="layer-groups">
+          <div class="group data-controls">
+            <div class="group-title">Data Controls</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="data_controls_endpoint">Endpoint</button>
+              <button type="button" class="box" data-id="data_controls_firewall">Firewall</button>
+              <button type="button" class="box" data-id="data_controls_identity">Identity</button>
+              <button type="button" class="box" data-id="data_controls_email">Email</button>
+              <button type="button" class="box" data-id="data_controls_network">Network</button>
+              <button type="button" class="box" data-id="data_controls_cloud">Cloud</button>
+            </div>
+          </div>
+          <div class="group integrations">
+            <div class="group-title">Integrations</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="integrations">350+ Third Party Integrations</button>
+            </div>
+          </div>
+          <div class="group secops">
+            <div class="group-title">Security Operations</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="secops_xdr">XDR</button>
+              <button type="button" class="box" data-id="secops_xdr">SIEM</button>
+              <button type="button" class="box" data-id="secops_edr">EDR</button>
+              <button type="button" class="box" data-id="secops_itdr">ITDR</button>
+              <button type="button" class="box" data-id="secops_ndr">NDR</button>
+              <button type="button" class="box" data-id="workspace_protection">Workspace Protection</button>
+            </div>
+          </div>
+        </div>
+        <div class="layer-banner">THREAT PREVENTION AND CONTROLS</div>
+      </section>
+
+      <!-- Layer 3: THREAT INTELLIGENCE -->
+      <section class="layer layer-intel">
+        <div class="layer-groups">
+          <div class="group">
+            <div class="group-title">Sophos X-Ops</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="threat_intel_xops">Adversary Tracking</button>
+              <button type="button" class="box" data-id="threat_research">Threat Research</button>
+              <button type="button" class="box" data-id="threat_intel_xops">Breach Forensics</button>
+              <button type="button" class="box" data-id="threat_intel_xops">Malware Analysis</button>
+              <button type="button" class="box" data-id="industry_collaboration">Industry Collaboration</button>
+            </div>
+          </div>
+          <div class="group">
+            <div class="group-title">AI, Automation & Engineering</div>
+            <div class="boxes">
+              <button type="button" class="box" data-id="adaptive_attack_protection">Adaptive Attack Protection</button>
+              <button type="button" class="box" data-id="threat_intel_ai">Critical Attack Warning</button>
+              <button type="button" class="box" data-id="security_analytics">Security Analytics</button>
+              <button type="button" class="box" data-id="threat_intel_ai">Detection Engineering</button>
+              <button type="button" class="box" data-id="threat_intel_ai">Threat Protection</button>
+              <button type="button" class="box" data-id="active_threat_response">Active Threat Response</button>
+            </div>
+          </div>
+        </div>
+        <div class="layer-banner">THREAT INTELLIGENCE</div>
+      </section>
+
+      <!-- Layer 4: DATA LAKE -->
+      <section class="layer layer-datalake">
+        <button type="button" class="datalake-btn" data-id="data_lake">DATA LAKE</button>
+      </section>
+
+      <!-- Footer -->
+      <div class="layer layer-footer">
+        <button type="button" class="layer-footer-line" data-id="ai_agentic_workflows">AI-Assisted & Agentic Workflows</button>
+      </div>
+    </div>
+    <div class="resize-handle" id="resizeHandle"></div>
+    <div class="detail-panel empty" id="detailPanel">
+      Klicken Sie auf einen Bereich in der Plattform, um die Sophos-Lösungen und NIS-2-Kapitel-IV-Anforderungen anzuzeigen.
+    </div>
+  </div>
+  <script>
+    const MAPPINGS = [
+      { "gse_feature_id": "managed_services_mdr", "gse_label": "MDR", "solution_key": "MDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 e)", "Art. 21.2 f)", "Art. 21.2 i)", "Art. 23"] },
+      { "gse_feature_id": "managed_services_ir", "gse_label": "Incident Response", "solution_key": "Emergency Incident Response", "nis2_articles": ["Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 e)"] },
+      { "gse_feature_id": "managed_services_vuln", "gse_label": "Vulnerability Management", "solution_key": "Managed Risk", "nis2_articles": ["Art. 21.2 e)"] },
+      { "gse_feature_id": "advisory_services", "gse_label": "Advisory Services", "solution_key": "Advisory Services", "nis2_articles": ["Art. 21.2 f)"] },
+      { "gse_feature_id": "data_controls_endpoint", "gse_label": "Endpoint", "solution_key": "Endpoint", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 f)"] },
+      { "gse_feature_id": "data_controls_firewall", "gse_label": "Firewall", "solution_key": "Firewall", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 e)", "Art. 21.2 f)", "Art. 21.2 h)", "Art. 21.2 i)", "Art. 21.2 j)"] },
+      { "gse_feature_id": "data_controls_identity", "gse_label": "Identity", "solution_key": "ITDR", "nis2_articles": ["Art. 21.2 i)", "Art. 21.2 j)"] },
+      { "gse_feature_id": "data_controls_email", "gse_label": "Email", "solution_key": "Email, Phish Threat", "nis2_articles": ["Art. 20", "Art. 21.2 g)", "Art. 21.2 h)"] },
+      { "gse_feature_id": "data_controls_network", "gse_label": "Network", "solution_key": "NDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 d)"] },
+      { "gse_feature_id": "data_controls_cloud", "gse_label": "Cloud", "solution_key": "XDR, Central", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 e)", "Art. 21.2 i)", "Art. 23"] },
+      { "gse_feature_id": "integrations", "gse_label": "350+ Third Party Integrations", "solution_key": "Central, XDR", "nis2_articles": ["Plattform; indirekt alle Artikel"], "nis2_articles_en": ["Platform; indirectly all articles"] },
+      { "gse_feature_id": "secops_xdr", "gse_label": "XDR", "solution_key": "XDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 e)", "Art. 21.2 i)", "Art. 23"] },
+      { "gse_feature_id": "secops_edr", "gse_label": "EDR", "solution_key": "Endpoint", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 f)"] },
+      { "gse_feature_id": "secops_itdr", "gse_label": "ITDR", "solution_key": "ITDR", "nis2_articles": ["Art. 21.2 i)", "Art. 21.2 a)","Art. 21.2 j)"] },
+      { "gse_feature_id": "secops_ndr", "gse_label": "NDR", "solution_key": "NDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 d)"] },
+      { "gse_feature_id": "workspace_protection", "gse_label": "Workspace Protection", "solution_key": "Workspace Protection", "nis2_articles": ["Art. 21.2 i)", "Art. 21.2 j)"] },
+      { "gse_feature_id": "threat_intel_xops", "gse_label": "Sophos X-Ops", "solution_key": "MDR, XDR", "nis2_articles": ["Art. 21.2 b)", "Art. 21.2 e)", "Art. 23"] },
+      { "gse_feature_id": "threat_research", "gse_label": "Threat Research", "solution_key": "Managed Risk, MDR, XDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 e)", "Art. 21.2 f)"] },
+      { "gse_feature_id": "threat_intel_ai", "gse_label": "AI, Automation & Engineering", "solution_key": "Endpoint, XDR, MDR, Firewall", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)"] },
+      { "gse_feature_id": "adaptive_attack_protection", "gse_label": "Adaptive Attack Protection", "solution_key": "Endpoint, XDR, EDR, MDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)"] },
+      { "gse_feature_id": "security_analytics", "gse_label": "Security Analytics", "solution_key": "XDR, SIEM, ITDR, NDR, MDR, Central", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)", "Art. 23"] },
+      { "gse_feature_id": "active_threat_response", "gse_label": "Active Threat Response", "solution_key": "Active Threat Response (Wireless, Switches)", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 d)"] },
+      { "gse_feature_id": "data_lake", "gse_label": "Data Lake", "solution_key": "XDR, Central", "nis2_articles": ["Art. 21.2 b)", "Art. 21.2 c)", "Art. 23"] },
+      { "gse_feature_id": "ai_agentic_workflows", "gse_label": "AI-Assisted & Agentic Workflows", "solution_key": "XDR, MDR, Central", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)"] }
+    ];
+
+    const PLACEHOLDER_MSG = {
+      gse_feature_id: "professional_services",
+      gse_label: "Professional Services",
+      solution_key: " MDR Guided Onboarding, Sophos Central Account Health Check, Firewall Implementation Services and Health Check, Identity Implementation Services and Health Check",
+      nis2_articles: ["Siehe Managed Services (MDR, Incident Response, Managed Risk) sowie Advisory Services."],
+      nis2_articles_en: ["See Managed Services (MDR, Incident Response, Managed Risk) and Advisory Services."]
+    };
+
+    const RIS_BASE = 'https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20010536';
+
+    const NISG_RIS = {
+      "Art. 20": { title_de: "Governance (Schulungen Leitungsorgane/Mitarbeiter)", title_en: "Governance (training of management bodies and employees)", nisg_ref: "§ 17 Abs. 1, § 21 Abs. 1" },
+      "Art. 21.2 a)": { title_de: "Risikoanalyse und Sicherheit für Informationssysteme", title_en: "Risk analysis and information system security", nisg_ref: "§ 21 Abs. 1 lit. a (Sicherheit der Systeme und Anlagen)" },
+      "Art. 21.2 b)": { title_de: "Bewältigung von Sicherheitsvorfällen", title_en: "Incident handling", nisg_ref: "§ 21 Abs. 1 lit. b" },
+      "Art. 21.2 c)": { title_de: "Betriebsaufrechterhaltung, Backup, Wiederherstellung, Krisenmanagement", title_en: "Business continuity, backup management, disaster recovery and crisis management", nisg_ref: "§ 21 Abs. 1 lit. c (Betriebskontinuitätsmanagement)" },
+      "Art. 21.2 d)": { title_de: "Sicherheit der Lieferkette", title_en: "Supply chain security", nisg_ref: "§ 21 Abs. 1 lit. a, lit. d" },
+      "Art. 21.2 e)": { title_de: "Erwerb, Entwicklung, Wartung, Schwachstellenmanagement", title_en: "Acquisition, development and maintenance, vulnerability handling and disclosure", nisg_ref: "§ 21 Abs. 1 lit. d, lit. e" },
+      "Art. 21.2 f)": { title_de: "Bewertung der Wirksamkeit von Risikomanagementmaßnahmen", title_en: "Assessment of the effectiveness of cybersecurity risk-management measures", nisg_ref: "§ 21 Abs. 1 lit. d (Überwachung, Überprüfung und Erprobung)" },
+      "Art. 21.2 g)": { title_de: "Cyberhygiene und Schulungen", title_en: "Basic cyber hygiene practices and cybersecurity training", nisg_ref: "§ 17 Abs. 1, § 21 Abs. 1" },
+      "Art. 21.2 h)": { title_de: "Kryptografie und Verschlüsselung", title_en: "Cryptography and encryption", nisg_ref: "§ 21 Abs. 1 lit. a" },
+      "Art. 21.2 i)": { title_de: "Sicherheit des Personals, Zugriffskontrolle, Anlagenmanagement", title_en: "Human resources security, access control and asset management", nisg_ref: "§ 21 Abs. 1 lit. a" },
+      "Art. 21.2 j)": { title_de: "MFA, kontinuierliche Authentifizierung, gesicherte Kommunikation", title_en: "Multi-factor authentication, continuous authentication, secured communications", nisg_ref: "§ 21 Abs. 1 lit. a" },
+      "Art. 23": { title_de: "Berichtspflichten (Beschreibung Vorfall, Art der Bedrohung/Ursache)", title_en: "Reporting obligations (incident description, threat type/root cause)", nisg_ref: "§ 19, § 21 Abs. 2, § 23 (Meldepflichten)" }
+    };
+
+    const PDCA = [
+      { solution_key: "Professional Services", gse_feature_ids: ["professional_services"], phases: { Plan: ["Implementierungs- und Onboarding-Planung", "Anforderungsanalyse und Rollenkonzept", "Gap-Analyse für MDR/Central/Firewall/Identity"], Do: ["MDR Guided Onboarding durchführen", "Sophos Central einrichten und konfigurieren", "Firewall- und Identity-Lösungen implementieren", "MFA und Policies aktivieren"], Check: ["Account Health Check (Central)", "Firewall- und Identity-Health-Checks", "Compliance- und Konfigurations-Status prüfen"], Act: ["Empfehlungen aus Health Checks umsetzen", "Konfiguration und Prozesse nachbessern"] } },
+      { solution_key: "Managed Risk", gse_feature_ids: ["managed_services_vuln"], phases: { Plan: ["Schwachstellenbewertung und Risikopriorisierung", "Attack-Surface-Analyse"], Do: ["Lizenz aktivieren & Kontakte hinterlegen", "Scanner-Appliance bereitstellen (VMware/Hyper-V)", "Externe & interne Scan-Ziele erfassen", "Ermittlungs- & Schwachstellen-Scans planen"], Check: ["Kontinuierliches Vulnerability Scanning", "Risiko-Reporting"], Act: ["Remediation-Empfehlungen umsetzen", "Patching-Priorisierung"] } },
+      { solution_key: "Advisory Services", gse_feature_ids: ["advisory_services"], phases: { Plan: ["Security Assessments planen", "Incident Readiness planen"], Do: ["Security Assessments durchführen", "Gap-Analyse durchführen", "Incident Readiness bewerten"], Check: ["Penetration Testing", "Red Team Exercises", "Wirksamkeit des Blue Teams prüfen"], Act: ["Maßnahmenempfehlungen umsetzen", "Incident Readiness verbessern"] } },
+      { solution_key: "MDR", gse_feature_ids: ["managed_services_mdr", "threat_intel_xops"], phases: { Plan: ["Threat-Landscape-Analyse", "Incident-Response-Planung"], Do: ["MDR-Lizenz aktivieren & Service einrichten", "Kontakte & Threat-Response-Modus festlegen", "Endpoint-Agent auf Geräte ausrollen", "Drittanbieter-Integrationen anbinden"], Check: ["24/7 Überwachung und Threat Hunting", "Telemetrie-Analyse und Korrelation"], Act: ["Incident Response Actions und Eindämmung", "Remediation-Empfehlungen"] } },
+      { solution_key: "Emergency Incident Response", gse_feature_ids: ["managed_services_ir"], phases: { Plan: ["Incident-Response-Plan-Erstellung"], Do: ["Hinterlegung der Sophos Emergency Incident Response-Kontakte", "Hinterlegung der Sophos Emergency Incident Response-Telefonnummer"], Check: ["Incident-Response-Plan-Überprüfung"], Act: ["Sofortreaktion bei Sicherheitsvorfällen", "Forensische Analyse und Eindämmung", "Wiederherstellungsunterstützung"] } },
+      { solution_key: "Phish Threat", gse_feature_ids: [], phases: { Plan: ["Awareness-Strategie planen", "Baseline-Sicherheitsbewusstsein erheben"], Do: ["Phishing-Simulationen durchführen", "Security-Awareness-Trainings ausrollen"], Check: ["Awareness-Level messen und Ergebnisse auswerten"], Act: ["Kampagnen und Inhalte anpassen", "Nachschulungen für Klicker durchführen"] } },
+      { solution_key: "Trainings und -Zertifizierungen", gse_feature_ids: [], phases: { Plan: ["Schulungsstrategie definieren"], Do: ["Schulungen und Zertifizierungen durchführen"] } },
+      { solution_key: "Central", gse_feature_ids: ["data_controls_cloud", "integrations", "data_lake", "ai_agentic_workflows"], phases: { Plan: [], Do: ["Lösungen zentral verwalten", "MFA für Admins"], Check: ["Dashboard-Monitoring, Compliance-Status"], Act: ["Risikobewertung durch die Klassifizierung der Severity in Events"] } },
+      { solution_key: "Endpoint", gse_feature_ids: ["data_controls_endpoint", "secops_edr"], phases: { Do: ["Endpunktschutz ausrollen", "Anti-Exploit/Ransomware aktivieren"], Check: ["EDR-Telemetrie analysieren", "Live Discover"], Act: ["Geräte isolieren", "Prozesse stoppen"] } },
+      { solution_key: "Firewall", gse_feature_ids: ["data_controls_firewall"], phases: { Do: ["Netzwerksegmentierung", "Regeln, VPN/SD-WAN"], Check: ["Traffic-Monitoring, IPS-Alerts"], Act: ["Automatische Sperrungen", "Policy-Anpassung"] } },
+      { solution_key: "ITDR", gse_feature_ids: ["data_controls_identity", "secops_itdr"], phases: { Do: ["Identitätsschutz, MFA, Conditional Access"], Check: ["Identitäts-Anomalien erkennen", "Zugriffsverhalten überwachen"], Act: ["Konten sperren / deaktivieren", "User Sessions beenden", "Passwort-Änderung erzwingen", "Rechte einschränken"] } },
+      { solution_key: "Email", gse_feature_ids: ["data_controls_email"], phases: { Plan: ["E-Mail-Sicherheitsrichtlinien definieren", "Anforderungen an Filterung und Verschlüsselung klären"], Do: ["E-Mail-Filtering, Anti-Phishing", "TLS, Anhangverschlüsselung"], Check: ["Filter- und Quarantäne-Reports prüfen", "Phishing-Erkennungsrate messen"], Act: ["Policies und Blocklisten anpassen", "Regeln nach False Positives optimieren"] } },
+      { solution_key: "NDR", gse_feature_ids: ["data_controls_network", "secops_ndr"], phases: { Do: ["Netzwerküberwachung implementieren"], Check: ["Netzwerkanomalien erkennen", "East-West-Traffic analysieren"] } },
+      { solution_key: "XDR", gse_feature_ids: ["secops_xdr", "data_controls_cloud", "data_lake"], phases: { Check: ["Cross-Domain-Korrelation, Threat Hunting", "Data-Lake-Analyse, Reporting"], Act: ["SOAR-Reaktion", "Playbooks ausführen"] } },
+      { solution_key: "ZTNA", gse_feature_ids: [], phases: { Do: ["Zero-Trust-Zugriff einrichten", "Geräte-/Identitätsprüfung"] } },
+      { solution_key: "Central Device Encryption", gse_feature_ids: [], phases: { Do: ["Festplattenverschlüsselung ausrollen"], Check: ["Verschlüsselungs-Compliance prüfen"] } },
+      { solution_key: "Mobile", gse_feature_ids: [], phases: { Do: ["Mobile Security ausrollen", "Compliance-Policies"] } },
+      { solution_key: "Wireless", gse_feature_ids: [], phases: { Do: ["WLAN-Sicherheit konfigurieren", "Verschlüsselung"] } },
+      { solution_key: "Active Threat Response", gse_feature_ids: ["active_threat_response"], phases: { Plan: ["ATR-Bereich festlegen (AP6, Sophos Switches)", "Anbindung MDR/XDR/NDR-Feed klären"], Do: ["ATR in Central für AP6 und Switches aktivieren", "ATR-API bei Bedarf anbinden"], Check: ["Isolierte Geräte prüfen", "MDR/XDR-Feed für ATR"], Act: ["Isolierungsrichtlinien anpassen", "ATR-Ereignisse nachbearbeiten"] } },
+      { solution_key: "Synchronized Security", gse_feature_ids: [], phases: { Do: ["Endpoint-Firewall-Kopplung", "Security Heartbeat"], Act: ["Automatische Hostisolierung"] } },
+      { solution_key: "Workspace Protection", gse_feature_ids: ["workspace_protection"], phases: { Plan: ["Ressourcen/Zugriff für ZTNA festlegen", "DNS- und Browser-Policies definieren", "RDP/SSH-Zugriffsrichtlinien festlegen"], Do: ["Protected Browser einrichten (Policies, Web-Zugriff)", "DNS Protection: Standorte, Policies, ggf. Endpoint-Anbindung", "ZTNA: Gateways, Resources & Access, Identity Provider", "RDP- und SSH-Zugriffsverwaltung einrichten"], Check: ["Protected Browser: Logs & Reports", "DNS Protection: Dashboard, Abfragen/Blockierungen", "ZTNA: Dashboard, Alerts", "RDP/SSH-Zugriffe prüfen"], Act: ["Policies anpassen", "RDP/SSH-Zugriff nachjustieren", "Alerts nachbearbeiten"] } }
+    ];
+
+    const pdcaByFeatureId = {};
+    PDCA.forEach(p => {
+      p.gse_feature_ids.forEach(fid => { pdcaByFeatureId[fid] = p; });
+    });
+    function findPdcaBySolutionKey(solKey) {
+      const keys = solKey.split(',').map(s => s.trim());
+      const found = [];
+      PDCA.forEach(p => {
+        if (keys.some(k => p.solution_key === k)) found.push(p);
+      });
+      return found;
+    }
+
+    function getMergedPdcaPhases(featureId, solutionKey) {
+      let pdcaEntries = [];
+      if (pdcaByFeatureId[featureId]) pdcaEntries = [pdcaByFeatureId[featureId]];
+      if (!pdcaEntries.length) pdcaEntries = findPdcaBySolutionKey(solutionKey);
+      if (!pdcaEntries.length) return null;
+      const merged = { Plan: [], Do: [], Check: [], Act: [] };
+      pdcaEntries.forEach(entry => {
+        const useEn = currentLang === 'en' && PDCA_PHASES_EN[entry.solution_key];
+        const phases = useEn ? PDCA_PHASES_EN[entry.solution_key] : entry.phases;
+        ['Plan', 'Do', 'Check', 'Act'].forEach(phase => {
+          if (phases[phase]) {
+            phases[phase].forEach(a => {
+              if (!merged[phase].includes(a)) merged[phase].push(a);
+            });
+          }
+        });
+      });
+      return merged;
+    }
+
+    function getNextPdcaStep(featureId, solutionKey) {
+      const merged = getMergedPdcaPhases(featureId, solutionKey);
+      if (!merged) return null;
+      for (const phase of ['Plan', 'Do', 'Check', 'Act']) {
+        if (merged[phase] && merged[phase].length > 0) return merged[phase][0];
+      }
+      return null;
+    }
+
+    const PDCA_PHASES_EN = {
+      "Professional Services": { Plan: ["Implementation and onboarding planning", "Requirements analysis and role concept", "Gap analysis for MDR/Central/Firewall/Identity"], Do: ["Conduct MDR Guided Onboarding", "Set up and configure Sophos Central", "Implement firewall and identity solutions", "Activate MFA and policies"], Check: ["Account Health Check (Central)", "Firewall and identity health checks", "Review compliance and configuration status"], Act: ["Implement health check recommendations", "Refine configuration and processes"] },
+      "Managed Risk": { Plan: ["Vulnerability assessment and risk prioritisation", "Attack surface analysis"], Do: ["Activate licence & register contacts", "Deploy scanner appliance (VMware/Hyper-V)", "Capture external & internal scan targets", "Schedule discovery & vulnerability scans"], Check: ["Continuous vulnerability scanning", "Risk reporting"], Act: ["Implement remediation recommendations", "Patch prioritisation"] },
+      "Advisory Services": { Plan: ["Plan security assessments", "Plan incident readiness"], Do: ["Conduct security assessments", "Perform gap analysis", "Evaluate incident readiness"], Check: ["Penetration testing", "Red team exercises", "Assess blue team effectiveness"], Act: ["Implement recommended measures", "Improve incident readiness"] },
+      "MDR": { Plan: ["Threat landscape analysis", "Incident response planning"], Do: ["Activate MDR licence & set up service", "Define contacts & threat response mode", "Roll out endpoint agent to devices", "Connect third-party integrations"], Check: ["24/7 monitoring and threat hunting", "Telemetry analysis and correlation"], Act: ["Incident response actions and containment", "Remediation recommendations"] },
+      "Emergency Incident Response": { Plan: ["Incident response plan creation"], Do: ["Register Sophos Emergency Incident Response contacts", "Register Sophos Emergency Incident Response phone number"], Check: ["Incident response plan review"], Act: ["Immediate response to security incidents", "Forensic analysis and containment", "Recovery support"] },
+      "Phish Threat": { Plan: ["Plan awareness strategy", "Establish baseline security awareness"], Do: ["Run phishing simulations", "Roll out security awareness training"], Check: ["Measure awareness level and evaluate results"], Act: ["Adjust campaigns and content", "Conduct follow-up training for clickers"] },
+      "Trainings und -Zertifizierungen": { Plan: ["Define training strategy"], Do: ["Conduct training and certifications"] },
+      "Central": { Plan: [], Do: ["Centrally manage solutions", "MFA for admins"], Check: ["Dashboard monitoring, compliance status"], Act: ["Risk assessment based on classifying event severities"] },
+      "Endpoint": { Do: ["Roll out endpoint protection", "Activate anti-exploit/ransomware"], Check: ["Analyse EDR telemetry", "Live Discover"], Act: ["Isolate devices", "Terminate processes"] },
+      "Firewall": { Do: ["Network segmentation", "Rules, VPN/SD-WAN"], Check: ["Traffic monitoring, IPS alerts"], Act: ["Automatic blocking", "Policy adjustment"] },
+      "ITDR": { Do: ["Identity protection, MFA, Conditional Access"], Check: ["Detect identity anomalies", "Monitor access behaviour"], Act: ["Lock / disable accounts", "Terminate user sessions", "Force password change", "Restrict privileges"] },
+      "Email": { Plan: ["Define email security policies", "Clarify filtering and encryption requirements"], Do: ["Email filtering, anti-phishing", "TLS, attachment encryption"], Check: ["Review filter and quarantine reports", "Measure phishing detection rates"], Act: ["Adjust policies and blocklists", "Tune rules after false positives"] },
+      "NDR": { Do: ["Implement network monitoring"], Check: ["Detect network anomalies", "Analyse east-west traffic"] },
+      "XDR": { Check: ["Cross-domain correlation, threat hunting", "Data lake analysis, reporting"], Act: ["SOAR response", "Execute playbooks"] },
+      "ZTNA": { Do: ["Set up zero-trust access", "Device/identity verification"] },
+      "Central Device Encryption": { Do: ["Roll out disk encryption"], Check: ["Verify encryption compliance"] },
+      "Mobile": { Do: ["Roll out mobile security", "Compliance policies"] },
+      "Wireless": { Do: ["Configure WLAN security", "Encryption"] },
+      "Active Threat Response": { Plan: ["Define ATR scope (AP6, Sophos Switches)", "Clarify MDR/XDR/NDR feed integration"], Do: ["Enable ATR in Central for AP6 and Switches", "Connect ATR API if needed"], Check: ["Review isolated devices", "MDR/XDR feed for ATR"], Act: ["Adjust isolation policies", "Follow up on ATR events"] },
+      "Synchronized Security": { Do: ["Endpoint-firewall coupling", "Security Heartbeat"], Act: ["Automatic host isolation"] },
+      "Workspace Protection": { Plan: ["Define resources/access for ZTNA", "Define DNS and browser policies", "Define RDP/SSH access policies"], Do: ["Set up Protected Browser (policies, web access)", "DNS Protection: locations, policies, endpoint integration if needed", "ZTNA: gateways, resources & access, identity providers", "Set up RDP and SSH access management"], Check: ["Protected Browser: logs & reports", "DNS Protection: dashboard, queries/blocks", "ZTNA: dashboard, alerts", "Review RDP/SSH access"], Act: ["Adjust policies", "Refine RDP/SSH access", "Follow up on alerts"] }
+    };
+
+    const UI_LANG = {
+      de: {
+        emptyPanel: "Klicken Sie auf einen Bereich in der Plattform, um die Sophos-Lösungen und NIS-2-Kapitel-IV-Anforderungen anzuzeigen.",
+        solutionLabel: "Sophos-Lösung(en)",
+        nis2Label: "NIS-2 / NISG – Anforderungen",
+        pdcaLabel: "PDCA-Zyklus",
+        disclaimer: "EU NIS-2 Kap. IV; Österreich: NISG (RIS). Keine Rechtsberatung.",
+        nisgPrefix: "NISG",
+        risLink: "RIS NISG",
+        stackLabel: "Stack-Ansicht",
+        stackEmpty: "Stack ist leer. Fügen Sie Lösungen über \"Zum Stack hinzufügen\" hinzu.",
+        stackHint: "Mehrere Lösungen kombinieren, um die gemeinsame NIS-2-Abdeckung zu sehen.",
+        collateralLabel: "Sophos-Mehrwert",
+        exportLabel: "Für PDF/Print Browser-Druck (Ctrl/Cmd+P) verwenden.",
+        btnAddToStack: "Zum Stack hinzufügen",
+        btnShowStack: "Stack anzeigen",
+        btnClearStack: "Stack leeren",
+        btnCopyOpp: "Text für Opportunität kopieren",
+        btnPrint: "Print / PDF",
+        oppCopied: "Text für Opportunität wurde in die Zwischenablage kopiert.",
+        filterLabel: "NIS-2-Artikel-Ansicht",
+        filterPlaceholder: "Nach NIS-2-Artikel filtern",
+        btnHome: "Zur Hauptansicht",
+        riskCalcTitle: "Risikoreduktion – nächster PDCA-Schritt",
+        riskCalcIntro: "Wenn Sie als Nächstes umsetzen:",
+        riskLikelihood: "Wahrscheinlichkeit",
+        riskImpact: "Schadensausmaß",
+        riskEffectiveness: "Wirksamkeit der Maßnahme",
+        riskNow: "Risiko heute",
+        riskAfter: "Risiko nach Schritt",
+        riskReduction: "Risikoreduktion",
+        riskScoreNow: "Score heute",
+        riskScoreAfter: "Score danach",
+        riskLossNow: "Schaden heute",
+        riskLossAfter: "Schaden danach",
+        riskLossNote: "Finanzielle Angaben sind grobe, modellhafte Schätzungen (Referenz-Maximalschaden: 1 Mio. €). Keine belastbare CRQ oder Rechts-/Versicherungsberatung.",
+        riskLossNoteProof: "Für underwriting-tauglichen Nachweis arbeitet Sophos mit Spektrum Labs zusammen (siehe unten).",
+        proofSectionTitle: "Versicherung & underwriting-tauglicher Nachweis",
+        proofSectionBody: "Die obige Risikoanzeige ist eine vereinfachte Modellrechnung. Für belastbaren Nachweis gegenüber Versicherern nutzt Sophos die Partnerschaft mit Spektrum Labs: Telemetrie aus Sophos MDR und weiteren Kontrollen wird in kryptographisch verifizierbare Cyber Resilience Tokens umgewandelt, die Versicherer für Underwriting und Claims anerkennen. Über das Insurability-Fastrack-Programm mit Sophos MDR erhalten Organisationen bevorzugte Konditionen bei Carriern wie Tokio Marine HCC, HSB und Elpha Secure.",
+        proofSectionCta: "Mehr zu Underwriting-Grade Proof (Sophos & Spektrum)",
+        proofSectionContact: "Sophos Insurability anfragen",
+        riskEffectivenessNis2Hint: "Entspricht NIS2 Art. 21.2 f) – Bewertung der Wirksamkeit von Risikomanagementmaßnahmen.",
+        riskReifegradHint: "Diese Wirksamkeitsbewertung unterstützt NIS2 Art. 21.2 f) und die Reifegrad-Dimension Risikomanagementmaßnahmen (Kapitel IV). Vollständige Reifegrad-Erhebung: reference-nis2-kunde-reifegrad."
+      },
+      en: {
+        emptyPanel: "Click on an area in the platform to view Sophos solutions and NIS-2 Chapter IV requirements.",
+        solutionLabel: "Sophos Solution(s)",
+        nis2Label: "NIS-2 / NISG – Requirements",
+        pdcaLabel: "PDCA Cycle",
+        disclaimer: "EU NIS-2 Ch. IV; Austria: NISG (RIS). Not legal advice.",
+        nisgPrefix: "NISG (Austria)",
+        risLink: "RIS NISG",
+        stackLabel: "Stack view",
+        stackEmpty: "Stack is empty. Add solutions via \"Add to stack\".",
+        stackHint: "Combine multiple solutions to see joint NIS-2 coverage.",
+        collateralLabel: "Sophos value",
+        exportLabel: "Use browser print (Ctrl/Cmd+P) to create a PDF.",
+        btnAddToStack: "Add to stack",
+        btnShowStack: "Show stack",
+        btnClearStack: "Clear stack",
+        btnCopyOpp: "Copy opportunity text",
+        btnPrint: "Print / PDF",
+        oppCopied: "Opportunity text has been copied to the clipboard.",
+        filterLabel: "NIS-2 article view",
+        filterPlaceholder: "Filter by NIS-2 article",
+        btnHome: "Back to main view",
+        riskCalcTitle: "Risk reduction – next PDCA step",
+        riskCalcIntro: "If you implement next:",
+        riskLikelihood: "Likelihood",
+        riskImpact: "Impact",
+        riskEffectiveness: "Step effectiveness",
+        riskNow: "Risk today",
+        riskAfter: "Risk after step",
+        riskReduction: "Risk reduction",
+        riskScoreNow: "Score today",
+        riskScoreAfter: "Score after",
+        riskLossNow: "Loss today",
+        riskLossAfter: "Loss after",
+        riskLossNote: "Financial figures are rough, model-based estimates (ref. max. loss: \u20ac1M). Not a reliable CRQ or legal/insurance advice.",
+        riskLossNoteProof: "For underwriting-grade proof, Sophos partners with Spektrum Labs (see below).",
+        proofSectionTitle: "Insurance & underwriting-grade proof",
+        proofSectionBody: "The risk display above is a simplified model calculation. For defensible proof accepted by insurers, Sophos partners with Spektrum Labs: telemetry from Sophos MDR and other controls is converted into cryptographically verifiable Cyber Resilience Tokens that insurers accept for underwriting and claims. Through the Insurability Fastrack program with Sophos MDR, organisations gain preferred terms from carriers such as Tokio Marine HCC, HSB and Elpha Secure.",
+        proofSectionCta: "More on underwriting-grade proof (Sophos & Spektrum)",
+        proofSectionContact: "Contact Sophos Insurability",
+        riskEffectivenessNis2Hint: "Maps to NIS2 Art. 21.2 f) – assessment of the effectiveness of cybersecurity risk-management measures.",
+        riskReifegradHint: "This effectiveness assessment supports NIS2 Art. 21.2 f) and the maturity dimension 'risk-management measures' (Chapter IV). Full maturity assessment: reference-nis2-kunde-reifegrad."
+      }
+    };
+
+    let currentLang = 'de';
+    let currentMapping = null;
+    let stackSelection = new Set();
+    let currentMode = 'single'; // 'single' | 'stack' | 'article'
+
+    const mapById = Object.fromEntries(MAPPINGS.map(m => [m.gse_feature_id, m]));
+    const ALL_NIS2_ARTICLES = Object.keys(NISG_RIS);
+
+    function getArticlesForMapping(mapping) {
+      const raw = (currentLang === 'en' && mapping.nis2_articles_en) ? mapping.nis2_articles_en : mapping.nis2_articles;
+      if (!raw) return [];
+      return raw.filter(a => a.startsWith('Art.'));
+    }
+
+    function getAllMappingsForArticles(articleKeys) {
+      const ids = [];
+      MAPPINGS.forEach(m => {
+        const arts = m.nis2_articles || [];
+        if (arts.some(a => articleKeys.includes(a))) ids.push(m);
+      });
+      return ids;
+    }
+
+    function formatRequirement(articleText) {
+      const entry = NISG_RIS[articleText];
+      const ui = UI_LANG[currentLang];
+      const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : null;
+      if (entry && title) {
+        return `
+          <div class="req-item">
+            <strong>${escapeHtml(articleText)}</strong> – ${escapeHtml(title)}
+            <div class="nisg-ref">${escapeHtml(ui.nisgPrefix)}: ${escapeHtml(entry.nisg_ref)} · <a href="${RIS_BASE}" target="_blank" rel="noopener">${escapeHtml(ui.risLink)}</a></div>
+          </div>`;
+      }
+      return `<div class="req-item">${escapeHtml(articleText)}${articleText.indexOf('Art.') !== -1 ? ' · <a href="' + RIS_BASE + '" target="_blank" rel="noopener">' + escapeHtml(ui.risLink) + '</a>' : ''}</div>`;
+    }
+
+    function renderPdcaBlock(featureId, solutionKey) {
+      let pdcaEntries = [];
+      if (pdcaByFeatureId[featureId]) {
+        pdcaEntries = [pdcaByFeatureId[featureId]];
+      }
+      if (!pdcaEntries.length) {
+        pdcaEntries = findPdcaBySolutionKey(solutionKey);
+      }
+      if (!pdcaEntries.length) return '';
+      const merged = { Plan: [], Do: [], Check: [], Act: [] };
+      pdcaEntries.forEach(entry => {
+        const useEn = currentLang === 'en' && PDCA_PHASES_EN[entry.solution_key];
+        const phases = useEn ? PDCA_PHASES_EN[entry.solution_key] : entry.phases;
+        ['Plan', 'Do', 'Check', 'Act'].forEach(phase => {
+          if (phases[phase]) {
+            phases[phase].forEach(a => {
+              if (!merged[phase].includes(a)) merged[phase].push(a);
+            });
+          }
+        });
+      });
+      const hasAny = Object.values(merged).some(arr => arr.length > 0);
+      if (!hasAny) return '';
+      const cycleIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>';
+      const quadrantCss = { Plan: 'pdca-q-plan', Do: 'pdca-q-do', Act: 'pdca-q-act', Check: 'pdca-q-check' };
+      function renderQuadrant(phase) {
+        const items = merged[phase];
+        const card = items.length
+          ? '<div class="pdca-content-card"><ul>' + items.map(a => '<li>' + escapeHtml(a) + '</li>').join('') + '</ul></div>'
+          : '';
+        return '<div class="pdca-quadrant ' + quadrantCss[phase] + '"><div class="pdca-phase-label">' + phase + '</div>' + card + '</div>';
+      }
+      const grid = '<div class="pdca-cycle">'
+        + renderQuadrant('Plan') + renderQuadrant('Do')
+        + renderQuadrant('Act') + renderQuadrant('Check')
+        + '<div class="pdca-center-icon">' + cycleIcon + '</div>'
+        + '</div>';
+      return '<div class="detail-section"><div class="detail-label">' + escapeHtml(UI_LANG[currentLang].pdcaLabel) + '</div>' + grid + '</div>';
+    }
+
+    function renderRiskCalculatorBlock(mapping) {
+      const nextStep = getNextPdcaStep(mapping.gse_feature_id, mapping.solution_key);
+      if (!nextStep) return '';
+      const ui = UI_LANG[currentLang];
+      return `
+        <div class="detail-section" id="riskCalcSection">
+          <div class="detail-label">${escapeHtml(ui.riskCalcTitle)}</div>
+          <div class="risk-calc">
+            <p class="risk-calc-intro">${escapeHtml(ui.riskCalcIntro)} <strong>${escapeHtml(nextStep)}</strong></p>
+            <div class="risk-calc-row">
+              <label for="riskL">${escapeHtml(ui.riskLikelihood)}</label>
+              <input type="range" id="riskL" min="1" max="10" value="5" step="1">
+              <span class="risk-calc-value" id="riskLVal">5</span>
+            </div>
+            <div class="risk-calc-row">
+              <label for="riskI">${escapeHtml(ui.riskImpact)}</label>
+              <input type="range" id="riskI" min="1" max="10" value="5" step="1">
+              <span class="risk-calc-value" id="riskIVal">5</span>
+            </div>
+            <div class="risk-calc-row">
+              <label for="riskE">${escapeHtml(ui.riskEffectiveness)}</label>
+              <input type="range" id="riskE" min="10" max="40" value="20" step="5">
+              <span class="risk-calc-value" id="riskEVal">20%</span>
+            </div>
+            <p class="risk-calc-nis2-hint">${escapeHtml(ui.riskEffectivenessNis2Hint)}</p>
+            <div class="risk-calc-result" id="riskResult"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Sophos × Spektrum: underwriting-grade proof section (no own formula, evidence layer)
+    function renderProofSection() {
+      const ui = UI_LANG[currentLang];
+      const spektrumUrl = 'https://spektrum.ai/resources/turning-cybersecurity-telemetry-into-underwriting-grade-proof';
+      const contactUrl = 'mailto:crp@sophos.com';
+      return `
+        <div class="detail-section proof-section print-only-proof">
+          <div class="detail-label">${escapeHtml(ui.proofSectionTitle)}</div>
+          <div class="proof-section-body">${escapeHtml(ui.proofSectionBody)}</div>
+          <div class="proof-section-links">
+            <a class="proof-cta" href="${spektrumUrl}" target="_blank" rel="noopener"><span class="icon">🔗</span>${escapeHtml(ui.proofSectionCta)}</a>
+            <a class="proof-cta" href="${contactUrl}"><span class="icon">✉</span>${escapeHtml(ui.proofSectionContact)}</a>
+          </div>
+        </div>
+      `;
+    }
+
+    // CRQ heuristic: Score 0–100 (L×I), mapped to financial band via MaxLoss ±25 %
+    const CRQ_MAX_LOSS = 1000000;
+
+    function formatEuro(val) {
+      var locale = currentLang === 'de' ? 'de-DE' : 'en-US';
+      if (val < 1000) return '< 1 k€';
+      if (val < 1000000) return Math.round(val / 1000).toLocaleString(locale) + ' k€';
+      var m = Math.round(val / 100000) / 10;
+      return m.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Mio. €';
+    }
+
+    function formatLossRange(ev) {
+      if (ev < 500) return '< 1 k€';
+      return formatEuro(ev * 0.75) + ' – ' + formatEuro(ev * 1.25);
+    }
+
+    function updateRiskCalculatorResult() {
+      const L = parseInt(document.getElementById('riskL')?.value || 5, 10);
+      const I = parseInt(document.getElementById('riskI')?.value || 5, 10);
+      const E = parseInt(document.getElementById('riskE')?.value || 20, 10) / 100;
+      const R = L * I;
+      const R2 = Math.round(L * (1 - E) * I * 10) / 10;
+      const reduction = R > 0 ? Math.round((1 - R2 / R) * 100) : 0;
+      const evNow = (R / 100) * CRQ_MAX_LOSS;
+      const evAfter = (R2 / 100) * CRQ_MAX_LOSS;
+      const ui = UI_LANG[currentLang];
+      const el = document.getElementById('riskResult');
+      if (el) {
+        el.innerHTML =
+          '<div class="risk-calc-scores">' +
+            '<div class="risk-calc-score-item"><div class="score-label">' + escapeHtml(ui.riskScoreNow) + '</div><div class="score-value now">' + R + '</div></div>' +
+            '<div class="risk-calc-score-item"><div class="score-label">' + escapeHtml(ui.riskScoreAfter) + '</div><div class="score-value after">' + R2 + '</div></div>' +
+            '<div class="risk-calc-score-item"><div class="score-label">' + escapeHtml(ui.riskReduction) + '</div><div class="score-value reduction">' + reduction + '%</div></div>' +
+          '</div>' +
+          '<div class="risk-calc-loss">' +
+            '<div class="risk-calc-loss-item"><div class="loss-label">' + escapeHtml(ui.riskLossNow) + '</div><div class="loss-value now">' + formatLossRange(evNow) + '</div></div>' +
+            '<div class="risk-calc-loss-item"><div class="loss-label">' + escapeHtml(ui.riskLossAfter) + '</div><div class="loss-value after">' + formatLossRange(evAfter) + '</div></div>' +
+          '</div>' +
+          '<div class="risk-calc-note">' + escapeHtml(ui.riskLossNote) + ' ' + escapeHtml(ui.riskLossNoteProof) + '</div>' +
+          '<p class="risk-calc-nis2-hint">' + escapeHtml(ui.riskReifegradHint) + '</p>';
+      }
+    }
+
+    function initRiskCalculator() {
+      const section = document.getElementById('riskCalcSection');
+      if (!section) return;
+      const riskL = document.getElementById('riskL');
+      const riskI = document.getElementById('riskI');
+      const riskE = document.getElementById('riskE');
+      const riskLVal = document.getElementById('riskLVal');
+      const riskIVal = document.getElementById('riskIVal');
+      const riskEVal = document.getElementById('riskEVal');
+      if (!riskL || !riskI || !riskE) return;
+      function updateValues() {
+        if (riskLVal) riskLVal.textContent = riskL.value;
+        if (riskIVal) riskIVal.textContent = riskI.value;
+        if (riskEVal) riskEVal.textContent = riskE.value + '%';
+        updateRiskCalculatorResult();
+      }
+      riskL.addEventListener('input', updateValues);
+      riskI.addEventListener('input', updateValues);
+      riskE.addEventListener('input', updateValues);
+      updateValues();
+    }
+
+    function showDetail(mapping) {
+      const panel = document.getElementById('detailPanel');
+      panel.classList.remove('empty');
+      const ui = UI_LANG[currentLang];
+      const pdcaHtml = renderPdcaBlock(mapping.gse_feature_id, mapping.solution_key);
+      const articles = ((currentLang === 'en' && mapping.nis2_articles_en) ? mapping.nis2_articles_en : mapping.nis2_articles);
+      const nis2ArticlesHtml = articles.map(formatRequirement).join('');
+      const collateralText = buildCollateralText(mapping);
+      const solutionValue =
+        mapping.gse_feature_id === 'data_controls_network'
+          ? (currentLang === 'en'
+              ? 'NDR – Sophos Switch & Sophos WLAN'
+              : 'NDR – Sophos Switch & Sophos WLAN')
+          : mapping.solution_key;
+      panel.innerHTML = `
+        <h2>${escapeHtml(mapping.gse_label)}</h2>
+        <div class="detail-actions">
+          <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
+            <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
+          </button>
+          <button type="button" onclick="window.__nis2AddToStack && window.__nis2AddToStack()">
+            <span class="icon">✚</span>${escapeHtml(ui.btnAddToStack)}
+          </button>
+          <button type="button" class="secondary" onclick="window.__nis2ShowStack && window.__nis2ShowStack()">
+            <span class="icon">☰</span>${escapeHtml(ui.btnShowStack)}
+          </button>
+          <button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp()">
+            <span class="icon">✎</span>${escapeHtml(ui.btnCopyOpp)}
+          </button>
+          <button type="button" class="secondary" onclick="window.print()">
+            <span class="icon">🖨</span>${escapeHtml(ui.btnPrint)}
+          </button>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">${escapeHtml(ui.solutionLabel)}</div>
+          <div class="detail-value">${escapeHtml(solutionValue)}</div>
+        </div>
+        ${pdcaHtml}
+        ${renderRiskCalculatorBlock(mapping)}
+        ${renderProofSection()}
+        <div class="detail-section">
+          <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+          <div class="nis2-list">
+            ${nis2ArticlesHtml}
+          </div>
+        </div>
+        ${collateralText}
+        <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
+      `;
+      attachPanelHandlers(mapping);
+      initRiskCalculator();
+    }
+
+    function setActiveBox(id) {
+      document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+      let idsToHighlight = [id];
+      if (id === 'adaptive_attack_protection') {
+        idsToHighlight = ['adaptive_attack_protection', 'data_controls_endpoint', 'secops_xdr', 'secops_edr', 'managed_services_mdr'];
+      } else if (id === 'threat_intel_xops') {
+        idsToHighlight = ['threat_intel_xops', 'integrations'];
+      } else if (id === 'data_lake') {
+        idsToHighlight = ['data_lake', 'secops_edr', 'secops_xdr', 'managed_services_mdr', 'secops_ndr', 'threat_intel_ai'];
+      } else if (id === 'threat_intel_ai') {
+        idsToHighlight = [
+          'threat_intel_ai',       // AI, Automation & Engineering
+          'managed_services_mdr',  // MDR
+          'secops_xdr',            // XDR / SIEM
+          'secops_edr',            // EDR
+          'secops_ndr',            // NDR
+          'data_controls_endpoint',// Endpoint
+          'data_controls_firewall',// Firewall
+          'data_controls_email',   // Email
+          'secops_itdr',           // ITDR
+          'integrations'           // 350+ Third Party Integrations
+        ];
+      } else if (id === 'security_analytics') {
+        idsToHighlight = [
+          'security_analytics',
+          'secops_xdr',       // XDR / SIEM
+          'secops_itdr',      // ITDR
+          'secops_ndr',       // NDR
+          'managed_services_mdr', // MDR
+          'integrations',     // 350+ Third Party Integrations
+          'secops_edr',       // EDR
+          'data_controls_email',   // Email
+          'data_controls_firewall' // Firewall
+        ];
+      } else if (id === 'active_threat_response') {
+        idsToHighlight = ['active_threat_response', 'data_controls_network', 'data_controls_firewall', 'secops_ndr', 'secops_xdr', 'managed_services_mdr'];
+      } else if (id === 'threat_research') {
+        idsToHighlight = ['threat_research', 'managed_services_vuln', 'industry_collaboration'];
+      } else if (id === 'managed_services_vuln') {
+        idsToHighlight = ['managed_services_vuln', 'threat_research', 'industry_collaboration'];
+      } else if (id === 'industry_collaboration') {
+        idsToHighlight = ['industry_collaboration', 'threat_research', 'managed_services_vuln'];
+      } else if (id === 'managed_services_mdr') {
+        idsToHighlight = ['managed_services_mdr', 'secops_xdr', 'data_controls_endpoint', 'secops_edr'];
+      } else if (id === 'secops_edr') {
+        idsToHighlight = ['secops_edr', 'data_controls_endpoint'];
+      }
+      idsToHighlight.forEach(rid => {
+        document.querySelectorAll(`[data-id="${rid}"]`).forEach(b => b.classList.add('active'));
+      });
+    }
+
+    function escapeHtml(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    const isEmbedded = window.parent !== window;
+
+    function notifyParent(type, data) {
+      if (isEmbedded) {
+        window.parent.postMessage({ source: 'nis2-explorer', type, data }, '*');
+      }
+    }
+
+    function goToMainView() {
+      currentMode = 'single';
+      currentMapping = null;
+      document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+      renderEmptyPanel();
+    }
+
+    function selectFeature(id, mapping) {
+      currentMapping = mapping;
+      currentMode = 'single';
+      showDetail(mapping);
+      setActiveBox(id);
+      notifyParent('select', {
+        id: mapping.gse_feature_id,
+        label: mapping.gse_label,
+        solution: mapping.solution_key,
+        nis2_articles: mapping.nis2_articles
+      });
+    }
+
+    document.querySelector('.diagram').addEventListener('click', (e) => {
+      const el = e.target.closest('.box, .datalake-btn, .layer-footer-line');
+      if (!el) {
+        goToMainView();
+        return;
+      }
+      const id = el.dataset.id;
+      const mapping = mapById[id] || (id === 'professional_services' ? PLACEHOLDER_MSG : null);
+      if (mapping) {
+        selectFeature(id, mapping);
+      }
+    });
+
+    function switchLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang;
+      document.querySelectorAll('.lang-toggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.lang === lang);
+      });
+      if (currentMapping) {
+        showDetail(currentMapping);
+      } else {
+        renderEmptyPanel();
+      }
+    }
+
+    document.querySelector('.lang-toggle').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-lang]');
+      if (btn && btn.dataset.lang !== currentLang) {
+        switchLanguage(btn.dataset.lang);
+      }
+    });
+
+    (function initResize() {
+      const handle = document.getElementById('resizeHandle');
+      const panel = document.getElementById('detailPanel');
+      let startX, startW;
+
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startW = panel.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.classList.add('resizing');
+
+        function onMove(e) {
+          const delta = startX - e.clientX;
+          const newW = Math.min(600, Math.max(240, startW + delta));
+          panel.style.width = newW + 'px';
+        }
+        function onUp() {
+          handle.classList.remove('dragging');
+          document.body.classList.remove('resizing');
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    })();
+
+    function buildCollateralText(mapping) {
+      const ui = UI_LANG[currentLang];
+      const articles = getArticlesForMapping(mapping);
+      if (!articles.length) return '';
+      const lines = articles.map(a => {
+        const entry = NISG_RIS[a];
+        const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : a;
+        return '- ' + a + ' – ' + title;
+      });
+      const header = currentLang === 'en'
+        ? 'How this supports NIS-2 in presales:'
+        : 'Mehrwert in NIS-2-Presales-Gesprächen:';
+      return `
+        <div class="detail-section">
+          <div class="detail-label">${escapeHtml(ui.collateralLabel)}</div>
+          <div class="detail-value">
+            <div>${escapeHtml(header)}</div>
+            <ul>${lines.map(l => '<li>' + escapeHtml(l) + '</li>').join('')}</ul>
+            <div class="nisg-ref"><a href="https://www.sophos.com/de-de/trust" target="_blank" rel="noopener">Sophos Trust Center</a></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildOpportunitySnippetSingle(mapping) {
+      const ui = UI_LANG[currentLang];
+      const articles = getArticlesForMapping(mapping);
+      const title = currentLang === 'en'
+        ? `NIS-2 – Sophos ${mapping.gse_label}`
+        : `NIS-2 – Sophos ${mapping.gse_label}`;
+      const header = `# ${title}\n\n`;
+      const solLabel = currentLang === 'en' ? 'Sophos solution(s)' : 'Sophos-Lösung(en)';
+      let md = header;
+      md += `**${solLabel}:** ${mapping.solution_key}\n\n`;
+      if (articles.length) {
+        const listTitle = currentLang === 'en'
+          ? 'Covered NIS-2 articles (Chapter IV):'
+          : 'Abgedeckte NIS-2-Artikel (Kapitel IV):';
+        md += `${listTitle}\n`;
+        articles.forEach(a => {
+          const entry = NISG_RIS[a];
+          const titleText = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : '';
+          md += `- **${a}** – ${titleText}\n`;
+        });
+        md += '\n';
+      }
+      const footer = currentLang === 'en'
+        ? '_Source: Sophos NIS-2 mapping (no legal advice)._'
+        : '_Quelle: Sophos NIS-2-Mapping (keine Rechtsberatung)._';
+      md += footer + '\n';
+      return md;
+    }
+
+    function buildOpportunitySnippetStack(mappings) {
+      const ui = UI_LANG[currentLang];
+      const title = currentLang === 'en'
+        ? 'NIS-2 – Sophos Stack'
+        : 'NIS-2 – Sophos Stack';
+      const header = `# ${title}\n\n`;
+      const solLabel = currentLang === 'en' ? 'Sophos solutions' : 'Sophos-Lösungen';
+      let md = header;
+      const solList = mappings.map(m => m.solution_key + ' (' + m.gse_label + ')');
+      md += `**${solLabel}:** ${solList.join(', ')}\n\n`;
+      const allArticles = [];
+      mappings.forEach(m => {
+        getArticlesForMapping(m).forEach(a => {
+          if (!allArticles.includes(a)) allArticles.push(a);
+        });
+      });
+      if (allArticles.length) {
+        const listTitle = currentLang === 'en'
+          ? 'Jointly covered NIS-2 articles (Chapter IV):'
+          : 'Gemeinsam abgedeckte NIS-2-Artikel (Kapitel IV):';
+        md += `${listTitle}\n`;
+        allArticles.forEach(a => {
+          const entry = NISG_RIS[a];
+          const titleText = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : '';
+          md += `- **${a}** – ${titleText}\n`;
+        });
+        md += '\n';
+      }
+      const footer = currentLang === 'en'
+        ? '_Source: Sophos NIS-2 mapping (no legal advice)._'
+        : '_Quelle: Sophos NIS-2-Mapping (keine Rechtsberatung)._';
+      md += footer + '\n';
+      return md;
+    }
+
+    function attachPanelHandlers(mapping) {
+      window.__nis2AddToStack = function() {
+        if (!mapping) return;
+        stackSelection.add(mapping.gse_feature_id);
+      };
+      window.__nis2ShowStack = function() {
+        if (!stackSelection.size) {
+          const panel = document.getElementById('detailPanel');
+          const ui = UI_LANG[currentLang];
+          panel.classList.remove('empty');
+          panel.innerHTML = `
+            <h2>${escapeHtml(ui.stackLabel)}</h2>
+            <div class="detail-actions">
+              <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
+                <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
+              </button>
+            </div>
+            <p class="detail-meta">${escapeHtml(ui.stackHint)}</p>
+            <p>${escapeHtml(ui.stackEmpty)}</p>
+            <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
+          `;
+          currentMode = 'stack';
+          document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+          return;
+        }
+        currentMode = 'stack';
+        const mappings = Array.from(stackSelection).map(id => mapById[id]).filter(Boolean);
+        const panel = document.getElementById('detailPanel');
+        const ui = UI_LANG[currentLang];
+        const allArticles = [];
+        const solKeys = [];
+        mappings.forEach(m => {
+          if (!solKeys.includes(m.solution_key)) solKeys.push(m.solution_key);
+          getArticlesForMapping(m).forEach(a => {
+            if (!allArticles.includes(a)) allArticles.push(a);
+          });
+        });
+        const nis2Html = allArticles.map(formatRequirement).join('');
+        const articleMappingHtml = allArticles.map(articleKey => {
+          const entry = NISG_RIS[articleKey];
+          const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : articleKey;
+          const sols = mappings
+            .filter(m => getArticlesForMapping(m).includes(articleKey))
+            .map(m => m.gse_label + ' (' + m.solution_key + ')');
+          const uniqueSols = Array.from(new Set(sols));
+          return '<div class="req-item"><strong>' + escapeHtml(articleKey) + '</strong> – ' +
+            escapeHtml(title) +
+            (uniqueSols.length
+              ? '<div class="detail-meta"><strong>' + escapeHtml(ui.solutionLabel) + ':</strong> ' +
+                escapeHtml(uniqueSols.join(', ')) + '</div>'
+              : '') +
+            '</div>';
+        }).join('');
+        panel.classList.remove('empty');
+        panel.innerHTML = `
+          <h2>${escapeHtml(ui.stackLabel)}</h2>
+          <div class="detail-actions">
+            <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
+              <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
+            </button>
+            <button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp('stack')">
+              <span class="icon">✎</span>${escapeHtml(ui.btnCopyOpp)}
+            </button>
+            <button type="button" class="secondary" onclick="window.__nis2ClearStack && window.__nis2ClearStack()">
+              <span class="icon">✕</span>${escapeHtml(ui.btnClearStack)}
+            </button>
+            <button type="button" class="secondary" onclick="window.print()">
+              <span class="icon">🖨</span>${escapeHtml(ui.btnPrint)}
+            </button>
+          </div>
+          <div class="detail-section">
+            <div class="detail-label">${escapeHtml(ui.solutionLabel)}</div>
+            <div class="detail-value">${escapeHtml(solKeys.join(', '))}</div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+            <div class="nis2-list">${nis2Html}</div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+            <div class="nis2-list">${articleMappingHtml}</div>
+          </div>
+          <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
+        `;
+        document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
+          const id = b.dataset.id;
+          b.classList.toggle('active', stackSelection.has(id));
+        });
+        window.__nis2CopyOpp = function(mode) {
+          const text = buildOpportunitySnippetStack(mappings);
+          copyToClipboard(text);
+          notifyParent('opportunity_snippet', {
+            mode: 'stack',
+            markdown: text,
+            features: mappings.map(m => m.gse_feature_id),
+            nis2_articles: allArticles
+          });
+        };
+        window.__nis2ClearStack = function() {
+          stackSelection.clear();
+          currentMode = 'single';
+          document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+          renderEmptyPanel();
+        };
+      };
+      window.__nis2CopyOpp = function(mode) {
+        let text;
+        if (mode === 'stack' || currentMode === 'stack') {
+          const mappings = Array.from(stackSelection).map(id => mapById[id]).filter(Boolean);
+          text = buildOpportunitySnippetStack(mappings);
+          const allArticles = [];
+          mappings.forEach(m => {
+            getArticlesForMapping(m).forEach(a => {
+              if (!allArticles.includes(a)) allArticles.push(a);
+            });
+          });
+          notifyParent('opportunity_snippet', {
+            mode: 'stack',
+            markdown: text,
+            features: mappings.map(m => m.gse_feature_id),
+            nis2_articles: allArticles
+          });
+        } else {
+          text = buildOpportunitySnippetSingle(mapping);
+          notifyParent('opportunity_snippet', {
+            mode: 'single',
+            markdown: text,
+            features: [mapping.gse_feature_id],
+            nis2_articles: getArticlesForMapping(mapping)
+          });
+        }
+        copyToClipboard(text);
+      };
+      window.__nis2ClearStack = function() {
+        stackSelection.clear();
+        currentMode = 'single';
+        document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+        renderEmptyPanel();
+      };
+      window.__nis2Home = function() {
+        currentMode = 'single';
+        currentMapping = null;
+        document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+        renderEmptyPanel();
+      };
+    }
+
+    function copyToClipboard(text) {
+      const ui = UI_LANG[currentLang];
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          try {
+            alert(ui.oppCopied);
+          } catch (_) {}
+        }).catch(() => {
+          fallbackCopy(text, ui);
+        });
+      } else {
+        fallbackCopy(text, ui);
+      }
+    }
+
+    function fallbackCopy(text, ui) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        alert(ui.oppCopied);
+      } catch (_) {
+        console.error('Clipboard copy failed');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function renderEmptyPanel() {
+      const panel = document.getElementById('detailPanel');
+      const ui = UI_LANG[currentLang];
+      const buttonsHtml = ALL_NIS2_ARTICLES.map(articleKey => {
+        const entry = NISG_RIS[articleKey];
+        const preview = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : articleKey;
+        return `
+          <button type="button" class="article-btn" data-article="${escapeHtml(articleKey)}">
+            <span class="article-id">${escapeHtml(articleKey)}</span>
+            <span class="article-preview">${escapeHtml(preview)}</span>
+          </button>`;
+      }).join('');
+      panel.classList.add('empty');
+      panel.innerHTML = `
+        <div class="detail-section">
+          <div class="detail-label">${escapeHtml(ui.filterLabel)}</div>
+          <div class="article-buttons" id="articleButtons">${buttonsHtml}</div>
+        </div>
+        <p>${escapeHtml(ui.emptyPanel)}</p>
+      `;
+      const container = document.getElementById('articleButtons');
+      if (container) {
+        container.addEventListener('click', (e) => {
+          const btn = e.target.closest('.article-btn[data-article]');
+          if (btn && btn.dataset.article) {
+            showArticleView(btn.dataset.article);
+          }
+        });
+      }
+    }
+
+    function showArticleView(articleKey) {
+      currentMode = 'article';
+      const panel = document.getElementById('detailPanel');
+      const allMappings = getAllMappingsForArticles([articleKey]);
+      const ui = UI_LANG[currentLang];
+      panel.classList.remove('empty');
+      const entry = NISG_RIS[articleKey];
+      const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : articleKey;
+      // Wenn ein Stack existiert, nur Stack-Lösungen zeigen; sonst alle
+      let mappings = allMappings;
+      if (stackSelection && stackSelection.size) {
+        const filtered = allMappings.filter(m => stackSelection.has(m.gse_feature_id));
+        if (filtered.length) mappings = filtered;
+      }
+      const listItems = mappings.map(m => {
+        const sol = m.solution_key;
+        return '<li><button type="button" class="article-solution-btn" data-feature="'+escapeHtml(m.gse_feature_id)+'"><strong>'+
+          escapeHtml(m.gse_label)+'</strong> – '+escapeHtml(sol)+'</button></li>';
+      }).join('') || '<li>'+escapeHtml(currentLang === 'en'
+        ? 'No solutions from the current stack mapped yet.'
+        : 'Noch keine Lösungen aus dem aktuellen Stack zugeordnet.')+'</li>';
+      panel.innerHTML = `
+        <div class="detail-actions">
+          <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
+            <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
+          </button>
+        </div>
+        <h2>${escapeHtml(articleKey)}</h2>
+        <div class="detail-section">
+          <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+          <div class="detail-value">${escapeHtml(title)}</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">${escapeHtml(ui.solutionLabel)}</div>
+          <ul id="articleSolutionList">${listItems}</ul>
+        </div>
+        <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
+      `;
+      // Hervorheben der passenden Plattform-Elemente
+      document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
+        const id = b.dataset.id;
+        const mapping = mapById[id];
+        if (!mapping) {
+          b.classList.remove('active');
+          return;
+        }
+        const arts = mapping.nis2_articles || [];
+        b.classList.toggle('active', arts.includes(articleKey) && (!stackSelection.size || stackSelection.has(mapping.gse_feature_id)));
+      });
+      // Navigation: Klick auf Lösung in der Artikelansicht öffnet deren Detail-View
+      const listEl = document.getElementById('articleSolutionList');
+      if (listEl) {
+        listEl.addEventListener('click', (e) => {
+          const btn = e.target.closest('.article-solution-btn[data-feature]');
+          if (!btn) return;
+          const fid = btn.dataset.feature;
+          const mapping = mapById[fid];
+          if (mapping) {
+            selectFeature(fid, mapping);
+          }
+        });
+      }
+      window.__nis2Home = function() {
+        currentMode = 'single';
+        currentMapping = null;
+        document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+        renderEmptyPanel();
+      };
+    }
+
+    (function initFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const langParam = params.get('lang');
+      if (langParam === 'en') {
+        switchLanguage('en');
+      }
+      const selectId = params.get('select');
+      if (selectId) {
+        const mapping = mapById[selectId] || (selectId === 'professional_services' ? PLACEHOLDER_MSG : null);
+        if (mapping) {
+          selectFeature(selectId, mapping);
+        }
+      } else {
+        renderEmptyPanel();
+      }
+    })();
+
+    if (isEmbedded) {
+      new ResizeObserver(() => {
+        notifyParent('resize', { height: document.documentElement.scrollHeight });
+      }).observe(document.body);
+      notifyParent('ready', { features: MAPPINGS.map(m => m.gse_feature_id) });
+    }
+
+  </script>
+</body>
+</html>
