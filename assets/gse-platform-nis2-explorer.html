@@ -3,48 +3,20 @@
   Einbettung (iframe): Diese Datei kann in anderen Webseiten eingebettet werden.
 
   URL-Parameter:
-    ?embed=1           Kompakte Darstellung (kleinerer Header, kein min-width)
-    ?lang=en           Englische Oberfläche (Standard: de)
-    ?select=<id>       Element beim Laden vorauswählen (z.B. managed_services_mdr)
-    Kombinierbar:      ?embed=1&lang=en&select=data_controls_firewall
+    ?embed=1              Kompakte Darstellung (kleinerer Header, kein min-width)
+    ?lang=en              Englische Oberfläche (Standard: de)
+    ?framework=nis2|iso27001|dora   Aktives Framework (Standard: nis2)
+    ?select=<id>          Element beim Laden vorauswählen (z.B. managed_services_mdr)
+    ?gaps=1               Kontrollliste „Lücken“ (Prüfscope + qualifizierte Abdeckung)
+    ?trust=full|product   Vermögenswerte-Ansicht
 
-  Verfügbare Feature-IDs für select:
-    managed_services_mdr, managed_services_ir, managed_services_vuln,
-    advisory_services, professional_services,
-    data_controls_endpoint, data_controls_firewall, data_controls_identity,
-    data_controls_email, data_controls_network, data_controls_cloud,
-    integrations, secops_xdr, secops_edr, secops_itdr, secops_ndr, workspace_protection,
-    threat_intel_xops, threat_intel_ai, adaptive_attack_protection, active_threat_response, data_lake, ai_agentic_workflows
+  Kombinierbar: ?embed=1&lang=en&framework=iso27001&select=data_controls_firewall
 
-  Empfohlener Einbettungscode:
-  <iframe
-    id="nis2Frame"
-    src="/assets/gse-platform-nis2-explorer.html?embed=1"
-    title="Sophos Central Platform – NIS2-Anforderungen"
-    width="100%"
-    height="800"
-    style="border: none; max-width: 1280px;"
-    loading="lazy"
-    sandbox="allow-scripts allow-same-origin"
-  ></iframe>
-
-  postMessage-API (vom iframe an den Parent):
-    { source: 'nis2-explorer', type: 'ready',  data: { features: [...] } }
-    { source: 'nis2-explorer', type: 'select', data: { id, label, solution, nis2_articles } }
-    { source: 'nis2-explorer', type: 'resize', data: { height } }
-
-  Beispiel-Listener im Parent:
-  <script>
-    window.addEventListener('message', (e) => {
-      if (e.data?.source !== 'nis2-explorer') return;
-      if (e.data.type === 'resize') {
-        document.getElementById('nis2Frame').style.height = e.data.data.height + 'px';
-      }
-      if (e.data.type === 'select') {
-        console.log('Ausgewählt:', e.data.data.label);
-      }
-    });
-  </script>
+  postMessage (iframe → Parent), source: nis2-explorer:
+    ready:   { features, frameworks, framework }
+    select:  { id, label, solution, framework, requirements, nis2_articles }
+    opportunity_snippet: { mode, markdown, features, framework, requirements, nis2_articles }
+    resize:  { height }
 -->
 <html lang="de">
 <head>
@@ -107,10 +79,142 @@
       letter-spacing: 0.02em;
       color: rgba(255,255,255,0.88);
     }
-    .lang-toggle {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
+    .header-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0.75rem;
+      align-items: start;
+      width: 100%;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 0.5rem;
+    }
+    .toolbar-left {
+      text-align: left;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.85);
+    }
+    .step-badge {
+      display: block;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+      color: rgba(167,139,250,0.95);
+    }
+    .checklist-filter {
+      display: inline-flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .checklist-filter button {
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      border: none;
+      padding: 0.3rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .checklist-filter button.active {
+      background: rgba(167,139,250,0.22);
+      color: #fff;
+    }
+    .toolbar-center {
+      text-align: center;
+    }
+    .toolbar-center h1 {
+      margin: 0;
+    }
+    .framework-subtitle {
+      margin: 0.35rem 0 0;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: 0.02em;
+    }
+    .toolbar-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.4rem;
+    }
+    .trust-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.75);
+    }
+    .trust-select-wrap select {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      padding: 0.25rem 0.4rem;
+      font-size: 0.68rem;
+      max-width: 200px;
+    }
+    .framework-toggle {
+      display: flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .framework-toggle button {
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      border: none;
+      padding: 0.35rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.03em;
+    }
+    .framework-toggle button:hover { color: rgba(255,255,255,0.85); }
+    .framework-toggle button.active {
+      background: rgba(167,139,250,0.28);
+      color: #fff;
+    }
+    .header-lang-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .explorer-flow {
+      display: flex;
+      gap: 0.35rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.68rem;
+      flex-wrap: wrap;
+    }
+    .explorer-flow .flow-step {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.55);
+    }
+    .explorer-flow .flow-step.active {
+      background: rgba(167,139,250,0.35);
+      color: #fff;
+    }
+    .article-count {
+      font-size: 0.68rem;
+      opacity: 0.75;
+      margin-left: 0.2rem;
+    }
+    .trust-footer-row {
+      margin-top: 0.75rem;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.4;
+    }
+    .trust-footer-row a {
+      color: rgba(167,139,250,0.95);
+    }
+    .header-lang-row .lang-toggle {
+      position: static;
       display: flex;
       border-radius: 6px;
       overflow: hidden;
@@ -930,11 +1034,40 @@
     <div class="diagram">
       <!-- Header oberhalb aller Layer (wie GSE Sophos Solution Map) -->
       <header class="platform-header">
-        <h1>SOPHOS CENTRAL PLATFORM</h1>
-        <p class="subtitle">Managed by Customers | Managed by Partners | Managed by Sophos</p>
-        <div class="lang-toggle">
-          <button type="button" data-lang="de" class="active">DE</button>
-          <button type="button" data-lang="en">EN</button>
+        <div class="header-toolbar">
+          <div class="toolbar-left">
+            <span class="step-badge" id="stepBadge">SCHRITT 1: KONTROLLLISTE</span>
+            <div class="checklist-filter" id="checklistFilter" role="group" aria-label="Kontrollliste">
+              <button type="button" data-mode="all" class="active">Alle</button>
+              <button type="button" data-mode="relevant">Nur zutreffende</button>
+              <button type="button" data-mode="gaps" id="btnGaps" title="Nur Lücken (Prüfscope)">Lücken</button>
+            </div>
+          </div>
+          <div class="toolbar-center">
+            <h1>SOPHOS CENTRAL PLATFORM</h1>
+            <p class="subtitle">Managed by Customers | Managed by Partners | Managed by Sophos</p>
+            <p class="framework-subtitle" id="frameworkSubtitle"></p>
+          </div>
+          <div class="toolbar-right">
+            <div class="trust-select-wrap">
+              <label for="trustSelect" id="trustSelectLabel">Vermögenswerte</label>
+              <select id="trustSelect" aria-labelledby="trustSelectLabel">
+                <option value="full">Voller Stack (Trust)</option>
+                <option value="product">Produkt-Fokus</option>
+              </select>
+            </div>
+            <div class="framework-toggle" id="frameworkToggle" role="tablist" aria-label="Framework">
+              <button type="button" role="tab" data-fw="nis2" class="active">NIS2</button>
+              <button type="button" role="tab" data-fw="iso27001">ISO 27001</button>
+              <button type="button" role="tab" data-fw="dora">DORA</button>
+            </div>
+            <div class="header-lang-row">
+              <div class="lang-toggle">
+                <button type="button" data-lang="de" class="active">DE</button>
+                <button type="button" data-lang="en">EN</button>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
       <!-- Layer 1: SERVICES -->
@@ -1041,40 +1174,571 @@
     </div>
   </div>
   <script>
-    const MAPPINGS = [
-      { "gse_feature_id": "managed_services_mdr", "gse_label": "MDR", "solution_key": "MDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 e)", "Art. 21.2 f)", "Art. 21.2 i)", "Art. 23"] },
-      { "gse_feature_id": "managed_services_ir", "gse_label": "Incident Response", "solution_key": "Emergency Incident Response", "nis2_articles": ["Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 e)"] },
-      { "gse_feature_id": "managed_services_vuln", "gse_label": "Vulnerability Management", "solution_key": "Managed Risk", "nis2_articles": ["Art. 21.2 e)"] },
-      { "gse_feature_id": "advisory_services", "gse_label": "Advisory Services", "solution_key": "Advisory Services", "nis2_articles": ["Art. 21.2 f)"] },
-      { "gse_feature_id": "data_controls_endpoint", "gse_label": "Endpoint", "solution_key": "Endpoint", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 f)"] },
-      { "gse_feature_id": "data_controls_firewall", "gse_label": "Firewall", "solution_key": "Firewall", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 e)", "Art. 21.2 f)", "Art. 21.2 h)", "Art. 21.2 i)", "Art. 21.2 j)"] },
-      { "gse_feature_id": "data_controls_identity", "gse_label": "Identity", "solution_key": "ITDR", "nis2_articles": ["Art. 21.2 i)", "Art. 21.2 j)"] },
-      { "gse_feature_id": "data_controls_email", "gse_label": "Email", "solution_key": "Email, Phish Threat", "nis2_articles": ["Art. 20", "Art. 21.2 g)", "Art. 21.2 h)"] },
-      { "gse_feature_id": "data_controls_network", "gse_label": "Network", "solution_key": "NDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 d)"] },
-      { "gse_feature_id": "data_controls_cloud", "gse_label": "Cloud", "solution_key": "XDR, Central", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 e)", "Art. 21.2 i)", "Art. 23"] },
-      { "gse_feature_id": "integrations", "gse_label": "350+ Third Party Integrations", "solution_key": "Central, XDR", "nis2_articles": ["Plattform; indirekt alle Artikel"], "nis2_articles_en": ["Platform; indirectly all articles"] },
-      { "gse_feature_id": "secops_xdr", "gse_label": "XDR", "solution_key": "XDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 e)", "Art. 21.2 i)", "Art. 23"] },
-      { "gse_feature_id": "secops_edr", "gse_label": "EDR", "solution_key": "Endpoint", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 c)", "Art. 21.2 d)", "Art. 21.2 f)"] },
-      { "gse_feature_id": "secops_itdr", "gse_label": "ITDR", "solution_key": "ITDR", "nis2_articles": ["Art. 21.2 i)", "Art. 21.2 a)","Art. 21.2 j)"] },
-      { "gse_feature_id": "secops_ndr", "gse_label": "NDR", "solution_key": "NDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 d)"] },
-      { "gse_feature_id": "workspace_protection", "gse_label": "Workspace Protection", "solution_key": "Workspace Protection", "nis2_articles": ["Art. 21.2 i)", "Art. 21.2 j)"] },
-      { "gse_feature_id": "threat_intel_xops", "gse_label": "Sophos X-Ops", "solution_key": "MDR, XDR", "nis2_articles": ["Art. 21.2 b)", "Art. 21.2 e)", "Art. 23"] },
-      { "gse_feature_id": "threat_research", "gse_label": "Threat Research", "solution_key": "Managed Risk, MDR, XDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 e)", "Art. 21.2 f)"] },
-      { "gse_feature_id": "threat_intel_ai", "gse_label": "AI, Automation & Engineering", "solution_key": "Endpoint, XDR, MDR, Firewall", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)"] },
-      { "gse_feature_id": "adaptive_attack_protection", "gse_label": "Adaptive Attack Protection", "solution_key": "Endpoint, XDR, EDR, MDR", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)"] },
-      { "gse_feature_id": "security_analytics", "gse_label": "Security Analytics", "solution_key": "XDR, SIEM, ITDR, NDR, MDR, Central", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)", "Art. 23"] },
-      { "gse_feature_id": "active_threat_response", "gse_label": "Active Threat Response", "solution_key": "Active Threat Response (Wireless, Switches)", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 d)"] },
-      { "gse_feature_id": "data_lake", "gse_label": "Data Lake", "solution_key": "XDR, Central", "nis2_articles": ["Art. 21.2 b)", "Art. 21.2 c)", "Art. 23"] },
-      { "gse_feature_id": "ai_agentic_workflows", "gse_label": "AI-Assisted & Agentic Workflows", "solution_key": "XDR, MDR, Central", "nis2_articles": ["Art. 21.2 a)", "Art. 21.2 b)", "Art. 21.2 f)"] }
-    ];
+    // BEGIN_GSE_GENERATED_A
 
+    // gse-explorer-data v1.2.0
+    const MAPPINGS = [
+      {
+        "gse_feature_id": "managed_services_mdr",
+        "gse_label": "MDR",
+        "solution_key": "MDR",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 d)",
+          "Art. 21.2 e)",
+          "Art. 21.2 f)",
+          "Art. 21.2 i)",
+          "Art. 23"
+        ],
+        "iso27001_controls": [
+          "A.5.7",
+          "A.5.24",
+          "A.5.25",
+          "A.5.26",
+          "A.5.27",
+          "A.5.28",
+          "A.8.7",
+          "A.8.15",
+          "A.8.16",
+          "A.8.17"
+        ],
+        "dora_articles": [
+          "Art. 6",
+          "Art. 9",
+          "Art. 10",
+          "Art. 11",
+          "Art. 17",
+          "Art. 19",
+          "Art. 21"
+        ]
+      },
+      {
+        "gse_feature_id": "managed_services_ir",
+        "gse_label": "Incident Response",
+        "solution_key": "Emergency Incident Response",
+        "nis2_articles": [
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 e)"
+        ],
+        "iso27001_controls": [
+          "A.5.26",
+          "A.5.27",
+          "A.5.28",
+          "A.5.29",
+          "A.8.16"
+        ],
+        "dora_articles": [
+          "Art. 11",
+          "Art. 17",
+          "Art. 19"
+        ]
+      },
+      {
+        "gse_feature_id": "managed_services_vuln",
+        "gse_label": "Vulnerability Management",
+        "solution_key": "Managed Risk",
+        "nis2_articles": [
+          "Art. 21.2 e)"
+        ],
+        "iso27001_controls": [
+          "A.8.8",
+          "A.8.9",
+          "A.5.9"
+        ],
+        "dora_articles": [
+          "Art. 8",
+          "Art. 9"
+        ]
+      },
+      {
+        "gse_feature_id": "advisory_services",
+        "gse_label": "Advisory Services",
+        "solution_key": "Advisory Services",
+        "nis2_articles": [
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.5.1",
+          "A.5.35",
+          "A.5.36",
+          "A.5.37"
+        ],
+        "dora_articles": [
+          "Art. 6",
+          "Art. 15"
+        ]
+      },
+      {
+        "gse_feature_id": "data_controls_endpoint",
+        "gse_label": "Endpoint",
+        "solution_key": "Endpoint",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 d)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.8.1",
+          "A.8.5",
+          "A.8.7",
+          "A.8.9"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "data_controls_firewall",
+        "gse_label": "Firewall",
+        "solution_key": "Firewall",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 e)",
+          "Art. 21.2 f)",
+          "Art. 21.2 h)",
+          "Art. 21.2 i)",
+          "Art. 21.2 j)"
+        ],
+        "iso27001_controls": [
+          "A.8.20",
+          "A.8.21",
+          "A.8.22",
+          "A.8.23",
+          "A.8.24",
+          "A.5.15"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "data_controls_identity",
+        "gse_label": "Identity",
+        "solution_key": "ITDR",
+        "nis2_articles": [
+          "Art. 21.2 i)",
+          "Art. 21.2 j)"
+        ],
+        "iso27001_controls": [
+          "A.5.15",
+          "A.5.16",
+          "A.5.17",
+          "A.5.18",
+          "A.8.2",
+          "A.8.5"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "data_controls_email",
+        "gse_label": "Email",
+        "solution_key": "Email, Phish Threat",
+        "nis2_articles": [
+          "Art. 20",
+          "Art. 21.2 g)",
+          "Art. 21.2 h)"
+        ],
+        "iso27001_controls": [
+          "A.6.3",
+          "A.8.1",
+          "A.8.12",
+          "A.8.23"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 14"
+        ]
+      },
+      {
+        "gse_feature_id": "data_controls_network",
+        "gse_label": "Network",
+        "solution_key": "NDR",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 d)"
+        ],
+        "iso27001_controls": [
+          "A.8.20",
+          "A.8.21",
+          "A.8.22",
+          "A.8.16"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "data_controls_cloud",
+        "gse_label": "Cloud",
+        "solution_key": "XDR, Central",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 d)",
+          "Art. 21.2 e)",
+          "Art. 21.2 i)",
+          "Art. 23"
+        ],
+        "iso27001_controls": [
+          "A.5.23",
+          "A.8.1",
+          "A.8.13",
+          "A.8.14",
+          "A.8.9"
+        ],
+        "dora_articles": [
+          "Art. 6",
+          "Art. 12",
+          "Art. 23",
+          "Art. 25"
+        ]
+      },
+      {
+        "gse_feature_id": "integrations",
+        "gse_label": "350+ Third Party Integrations",
+        "solution_key": "Central, XDR",
+        "nis2_articles": [
+          "Plattform; indirekt alle Artikel"
+        ],
+        "nis2_articles_en": [
+          "Platform; indirectly all articles"
+        ],
+        "iso27001_controls": [
+          "Plattform; indirekt Annex A"
+        ],
+        "dora_articles": [
+          "Plattform; indirekt alle Artikel"
+        ],
+        "iso27001_controls_en": [
+          "Platform; indirectly all Annex A controls"
+        ],
+        "dora_articles_en": [
+          "Platform; indirectly all articles"
+        ]
+      },
+      {
+        "gse_feature_id": "secops_xdr",
+        "gse_label": "XDR",
+        "solution_key": "XDR",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 d)",
+          "Art. 21.2 e)",
+          "Art. 21.2 i)",
+          "Art. 23"
+        ],
+        "iso27001_controls": [
+          "A.8.15",
+          "A.8.16",
+          "A.8.1",
+          "A.5.25"
+        ],
+        "dora_articles": [
+          "Art. 10",
+          "Art. 17",
+          "Art. 19"
+        ]
+      },
+      {
+        "gse_feature_id": "secops_edr",
+        "gse_label": "EDR",
+        "solution_key": "Endpoint",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 21.2 d)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.8.1",
+          "A.8.7",
+          "A.8.16",
+          "A.8.9"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "secops_itdr",
+        "gse_label": "ITDR",
+        "solution_key": "ITDR",
+        "nis2_articles": [
+          "Art. 21.2 i)",
+          "Art. 21.2 a)",
+          "Art. 21.2 j)"
+        ],
+        "iso27001_controls": [
+          "A.5.16",
+          "A.5.17",
+          "A.8.2",
+          "A.8.5",
+          "A.8.16"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "secops_ndr",
+        "gse_label": "NDR",
+        "solution_key": "NDR",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 d)"
+        ],
+        "iso27001_controls": [
+          "A.8.20",
+          "A.8.21",
+          "A.8.16"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "workspace_protection",
+        "gse_label": "Workspace Protection",
+        "solution_key": "Workspace Protection",
+        "nis2_articles": [
+          "Art. 21.2 i)",
+          "Art. 21.2 j)"
+        ],
+        "iso27001_controls": [
+          "A.5.15",
+          "A.8.1",
+          "A.8.21",
+          "A.8.5"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "threat_intel_xops",
+        "gse_label": "Sophos X-Ops",
+        "solution_key": "MDR, XDR",
+        "nis2_articles": [
+          "Art. 21.2 b)",
+          "Art. 21.2 e)",
+          "Art. 23"
+        ],
+        "iso27001_controls": [
+          "A.5.7",
+          "A.8.16",
+          "A.5.25"
+        ],
+        "dora_articles": [
+          "Art. 10",
+          "Art. 21"
+        ]
+      },
+      {
+        "gse_feature_id": "threat_research",
+        "gse_label": "Threat Research",
+        "solution_key": "Managed Risk, MDR, XDR",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 e)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.5.7",
+          "A.8.8",
+          "A.5.35",
+          "A.5.9"
+        ],
+        "dora_articles": [
+          "Art. 8",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "industry_collaboration",
+        "gse_label": "Industry Collaboration",
+        "solution_key": "Industry Collaboration",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 e)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.5.6",
+          "A.5.7",
+          "A.5.35"
+        ],
+        "dora_articles": [
+          "Art. 22"
+        ]
+      },
+      {
+        "gse_feature_id": "threat_intel_ai",
+        "gse_label": "AI, Automation & Engineering",
+        "solution_key": "Endpoint, XDR, MDR, Firewall",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.5.7",
+          "A.8.16",
+          "A.8.28",
+          "A.8.29"
+        ],
+        "dora_articles": [
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "adaptive_attack_protection",
+        "gse_label": "Adaptive Attack Protection",
+        "solution_key": "Endpoint, XDR, EDR, MDR",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.8.1",
+          "A.8.7",
+          "A.8.16",
+          "A.5.35"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 10"
+        ]
+      },
+      {
+        "gse_feature_id": "security_analytics",
+        "gse_label": "Security Analytics",
+        "solution_key": "XDR, SIEM, ITDR, NDR, MDR, Central",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 f)",
+          "Art. 23"
+        ],
+        "iso27001_controls": [
+          "A.8.15",
+          "A.8.16",
+          "A.8.12",
+          "A.5.35"
+        ],
+        "dora_articles": [
+          "Art. 10",
+          "Art. 17"
+        ]
+      },
+      {
+        "gse_feature_id": "active_threat_response",
+        "gse_label": "Active Threat Response",
+        "solution_key": "Active Threat Response (Wireless, Switches)",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 d)"
+        ],
+        "iso27001_controls": [
+          "A.8.20",
+          "A.8.16",
+          "A.5.29"
+        ],
+        "dora_articles": [
+          "Art. 9",
+          "Art. 11"
+        ]
+      },
+      {
+        "gse_feature_id": "data_lake",
+        "gse_label": "Data Lake",
+        "solution_key": "XDR, Central",
+        "nis2_articles": [
+          "Art. 21.2 b)",
+          "Art. 21.2 c)",
+          "Art. 23"
+        ],
+        "iso27001_controls": [
+          "A.8.13",
+          "A.8.15",
+          "A.8.1",
+          "A.5.9"
+        ],
+        "dora_articles": [
+          "Art. 6",
+          "Art. 12",
+          "Art. 17"
+        ]
+      },
+      {
+        "gse_feature_id": "ai_agentic_workflows",
+        "gse_label": "AI-Assisted & Agentic Workflows",
+        "solution_key": "XDR, MDR, Central",
+        "nis2_articles": [
+          "Art. 21.2 a)",
+          "Art. 21.2 b)",
+          "Art. 21.2 f)"
+        ],
+        "iso27001_controls": [
+          "A.5.8",
+          "A.8.16",
+          "A.8.29",
+          "A.5.37"
+        ],
+        "dora_articles": [
+          "Art. 5",
+          "Art. 10"
+        ]
+      }
+    ];
     const PLACEHOLDER_MSG = {
-      gse_feature_id: "professional_services",
-      gse_label: "Professional Services",
-      solution_key: " MDR Guided Onboarding, Sophos Central Account Health Check, Firewall Implementation Services and Health Check, Identity Implementation Services and Health Check",
-      nis2_articles: ["Siehe Managed Services (MDR, Incident Response, Managed Risk) sowie Advisory Services."],
-      nis2_articles_en: ["See Managed Services (MDR, Incident Response, Managed Risk) and Advisory Services."]
+      "gse_feature_id": "professional_services",
+      "gse_label": "Professional Services",
+      "solution_key": " MDR Guided Onboarding, Sophos Central Account Health Check, Firewall Implementation Services and Health Check, Identity Implementation Services and Health Check",
+      "nis2_articles": [
+        "Siehe Managed Services (MDR, Incident Response, Managed Risk) sowie Advisory Services."
+      ],
+      "nis2_articles_en": [
+        "See Managed Services (MDR, Incident Response, Managed Risk) and Advisory Services."
+      ],
+      "iso27001_controls": [
+        "Siehe Managed Services (MDR, Incident Response, Managed Risk) sowie Advisory Services."
+      ],
+      "iso27001_controls_en": [
+        "See Managed Services (MDR, Incident Response, Managed Risk) and Advisory Services."
+      ],
+      "dora_articles": [
+        "Siehe Managed Services (MDR, Incident Response, Managed Risk) sowie Advisory Services."
+      ],
+      "dora_articles_en": [
+        "See Managed Services (MDR, Incident Response, Managed Risk) and Advisory Services."
+      ]
     };
+    // END_GSE_GENERATED_A
 
     const RIS_BASE = 'https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=20010536';
 
@@ -1093,29 +1757,1583 @@
       "Art. 23": { title_de: "Berichtspflichten (Beschreibung Vorfall, Art der Bedrohung/Ursache)", title_en: "Reporting obligations (incident description, threat type/root cause)", nisg_ref: "§ 19, § 21 Abs. 2, § 23 (Meldepflichten)" }
     };
 
+    // BEGIN_GSE_GENERATED_C
+
+    // gse-explorer-frameworks v1.0.0
+    const FRAMEWORK_REGISTRY = {
+      "version": "1.0.0",
+      "default_framework": "nis2",
+      "frameworks": [
+        {
+          "id": "nis2",
+          "label_de": "NIS2",
+          "label_en": "NIS2",
+          "description_de": "EU-Richtlinie NIS2, Kapitel IV; AT: NISG (RIS).",
+          "description_en": "EU NIS2 Directive, Chapter IV; Austria: NISG (RIS)."
+        },
+        {
+          "id": "iso27001",
+          "label_de": "ISO 27001",
+          "label_en": "ISO 27001",
+          "description_de": "ISO/IEC 27001:2022 Anhang A (Kontrollen gem. ISO/IEC 27002:2022).",
+          "description_en": "ISO/IEC 27001:2022 Annex A (controls per ISO/IEC 27002:2022)."
+        },
+        {
+          "id": "dora",
+          "label_de": "DORA",
+          "label_en": "DORA",
+          "description_de": "VO (EU) 2022/2554 (DORA) – Auswahl relevanter Artikel.",
+          "description_en": "Regulation (EU) 2022/2554 (DORA) – curated article subset."
+        }
+      ]
+    };
+    const ISO27001_META = {
+      "A.5.1": {
+        "title_de": "Richtlinien für Informationssicherheit",
+        "title_en": "Policies for information security",
+        "theme": "organizational"
+      },
+      "A.5.2": {
+        "title_de": "Rollen und Verantwortlichkeiten für Informationssicherheit",
+        "title_en": "Information security roles and responsibilities",
+        "theme": "organizational"
+      },
+      "A.5.3": {
+        "title_de": "Aufgabentrennung",
+        "title_en": "Segregation of duties",
+        "theme": "organizational"
+      },
+      "A.5.4": {
+        "title_de": "Führungsverantwortung",
+        "title_en": "Management responsibilities",
+        "theme": "organizational"
+      },
+      "A.5.5": {
+        "title_de": "Kontakte zu Behörden",
+        "title_en": "Contacts with authorities",
+        "theme": "organizational"
+      },
+      "A.5.6": {
+        "title_de": "Kontakt zu Interessengruppen",
+        "title_en": "Contact with special interest groups",
+        "theme": "organizational"
+      },
+      "A.5.7": {
+        "title_de": "Bedrohungsinformationen (Threat Intelligence)",
+        "title_en": "Threat intelligence",
+        "theme": "organizational"
+      },
+      "A.5.8": {
+        "title_de": "Informationssicherheit im Projektmanagement",
+        "title_en": "Information security in project management",
+        "theme": "organizational"
+      },
+      "A.5.9": {
+        "title_de": "Inventar von Informationen und zugehörigen Assets",
+        "title_en": "Inventory of information and other associated assets",
+        "theme": "organizational"
+      },
+      "A.5.10": {
+        "title_de": "Zulässige Nutzung von Informationen und Assets",
+        "title_en": "Acceptable use of information and other associated assets",
+        "theme": "organizational"
+      },
+      "A.5.11": {
+        "title_de": "Rückgabe von Assets",
+        "title_en": "Return of assets",
+        "theme": "organizational"
+      },
+      "A.5.12": {
+        "title_de": "Klassifizierung von Informationen",
+        "title_en": "Classification of information",
+        "theme": "organizational"
+      },
+      "A.5.13": {
+        "title_de": "Kennzeichnung von Informationen",
+        "title_en": "Labelling of information",
+        "theme": "organizational"
+      },
+      "A.5.14": {
+        "title_de": "Informationsübertragung",
+        "title_en": "Information transfer",
+        "theme": "organizational"
+      },
+      "A.5.15": {
+        "title_de": "Zugriffskontrolle",
+        "title_en": "Access control",
+        "theme": "organizational"
+      },
+      "A.5.16": {
+        "title_de": "Identitätsmanagement",
+        "title_en": "Identity management",
+        "theme": "organizational"
+      },
+      "A.5.17": {
+        "title_de": "Authentifizierungsinformationen",
+        "title_en": "Authentication information",
+        "theme": "organizational"
+      },
+      "A.5.18": {
+        "title_de": "Zugriffsrechte",
+        "title_en": "Access rights",
+        "theme": "organizational"
+      },
+      "A.5.19": {
+        "title_de": "Informationssicherheit in Lieferantenbeziehungen",
+        "title_en": "Information security in supplier relationships",
+        "theme": "organizational"
+      },
+      "A.5.20": {
+        "title_de": "Informationssicherheit in Lieferantenvereinbarungen",
+        "title_en": "Addressing information security within supplier agreements",
+        "theme": "organizational"
+      },
+      "A.5.21": {
+        "title_de": "Informationssicherheit in der IKT-Lieferkette",
+        "title_en": "Managing information security in the ICT supply chain",
+        "theme": "organizational"
+      },
+      "A.5.22": {
+        "title_de": "Überwachung und Änderung von Lieferantenleistungen",
+        "title_en": "Monitoring, review and change management of supplier services",
+        "theme": "organizational"
+      },
+      "A.5.23": {
+        "title_de": "Informationssicherheit bei Nutzung von Cloud-Diensten",
+        "title_en": "Information security for use of cloud services",
+        "theme": "organizational"
+      },
+      "A.5.24": {
+        "title_de": "Planung und Vorbereitung des Vorfallmanagements",
+        "title_en": "Planning and preparation of information security incident management",
+        "theme": "organizational"
+      },
+      "A.5.25": {
+        "title_de": "Bewertung und Entscheid bei Sicherheitsereignissen",
+        "title_en": "Assessment and decision on information security events",
+        "theme": "organizational"
+      },
+      "A.5.26": {
+        "title_de": "Reaktion auf Informationssicherheitsvorfälle",
+        "title_en": "Response to information security incidents",
+        "theme": "organizational"
+      },
+      "A.5.27": {
+        "title_de": "Lernen aus Informationssicherheitsvorfällen",
+        "title_en": "Learning from information security incidents",
+        "theme": "organizational"
+      },
+      "A.5.28": {
+        "title_de": "Beweissicherung",
+        "title_en": "Collection of evidence",
+        "theme": "organizational"
+      },
+      "A.5.29": {
+        "title_de": "Informationssicherheit bei Störungen",
+        "title_en": "Information security during disruption",
+        "theme": "organizational"
+      },
+      "A.5.30": {
+        "title_de": "IKT-Bereitschaft für Geschäftskontinuität",
+        "title_en": "ICT readiness for business continuity",
+        "theme": "organizational"
+      },
+      "A.5.31": {
+        "title_de": "Rechtliche und vertragliche Anforderungen",
+        "title_en": "Legal, statutory, regulatory and contractual requirements",
+        "theme": "organizational"
+      },
+      "A.5.32": {
+        "title_de": "Schutz geistigen Eigentums",
+        "title_en": "Intellectual property rights",
+        "theme": "organizational"
+      },
+      "A.5.33": {
+        "title_de": "Schutz von Aufzeichnungen",
+        "title_en": "Protection of records",
+        "theme": "organizational"
+      },
+      "A.5.34": {
+        "title_de": "Datenschutz und Schutz personenbezogener Daten (PII)",
+        "title_en": "Privacy and protection of personally identifiable information (PII)",
+        "theme": "organizational"
+      },
+      "A.5.35": {
+        "title_de": "Unabhängige Überprüfung der Informationssicherheit",
+        "title_en": "Independent review of information security",
+        "theme": "organizational"
+      },
+      "A.5.36": {
+        "title_de": "Einhaltung von Richtlinien und Standards",
+        "title_en": "Compliance with policies, rules and standards for information security",
+        "theme": "organizational"
+      },
+      "A.5.37": {
+        "title_de": "Dokumentierte Arbeitsanweisungen",
+        "title_en": "Documented operating procedures",
+        "theme": "organizational"
+      },
+      "A.6.1": {
+        "title_de": "Überprüfung (Screening) von Personal",
+        "title_en": "Screening",
+        "theme": "people"
+      },
+      "A.6.2": {
+        "title_de": "Arbeitsvertragsbedingungen (Informationssicherheit)",
+        "title_en": "Terms and conditions of employment",
+        "theme": "people"
+      },
+      "A.6.3": {
+        "title_de": "Awareness, Schulung und Training",
+        "title_en": "Information security awareness, education and training",
+        "theme": "people"
+      },
+      "A.6.4": {
+        "title_de": "Disziplinarverfahren",
+        "title_en": "Disciplinary process",
+        "theme": "people"
+      },
+      "A.6.5": {
+        "title_de": "Pflichten nach Austritt oder Rollenwechsel",
+        "title_en": "Responsibilities after termination or change of employment",
+        "theme": "people"
+      },
+      "A.6.6": {
+        "title_de": "Vertraulichkeits- / Geheimhaltungsvereinbarungen",
+        "title_en": "Confidentiality or non-disclosure agreements",
+        "theme": "people"
+      },
+      "A.6.7": {
+        "title_de": "Telearbeit / mobiles Arbeiten",
+        "title_en": "Remote working",
+        "theme": "people"
+      },
+      "A.6.8": {
+        "title_de": "Meldung von Informationssicherheitsereignissen",
+        "title_en": "Information security event reporting",
+        "theme": "people"
+      },
+      "A.7.1": {
+        "title_de": "Physische Sicherheitszonen",
+        "title_en": "Physical security perimeters",
+        "theme": "physical"
+      },
+      "A.7.2": {
+        "title_de": "Physischer Zutritt",
+        "title_en": "Physical entry",
+        "theme": "physical"
+      },
+      "A.7.3": {
+        "title_de": "Absicherung von Büros, Räumen und Anlagen",
+        "title_en": "Securing offices, rooms and facilities",
+        "theme": "physical"
+      },
+      "A.7.4": {
+        "title_de": "Physische Überwachung",
+        "title_en": "Physical security monitoring",
+        "theme": "physical"
+      },
+      "A.7.5": {
+        "title_de": "Schutz vor physischen und Umweltgefahren",
+        "title_en": "Protecting against physical and environmental threats",
+        "theme": "physical"
+      },
+      "A.7.6": {
+        "title_de": "Arbeiten in sicheren Bereichen",
+        "title_en": "Working in secure areas",
+        "theme": "physical"
+      },
+      "A.7.7": {
+        "title_de": "Sauberer Schreibtisch / Bildschirmsperre",
+        "title_en": "Clear desk and clear screen",
+        "theme": "physical"
+      },
+      "A.7.8": {
+        "title_de": "Aufstellung und Schutz von Geräten",
+        "title_en": "Equipment siting and protection",
+        "theme": "physical"
+      },
+      "A.7.9": {
+        "title_de": "Sicherheit von Assets außerhalb des Standorts",
+        "title_en": "Security of assets off-premises",
+        "theme": "physical"
+      },
+      "A.7.10": {
+        "title_de": "Speichermedien",
+        "title_en": "Storage media",
+        "theme": "physical"
+      },
+      "A.7.11": {
+        "title_de": "Versorgungsinfrastruktur (Strom, Klima, …)",
+        "title_en": "Supporting utilities",
+        "theme": "physical"
+      },
+      "A.7.12": {
+        "title_de": "Verkabelungssicherheit",
+        "title_en": "Cabling security",
+        "theme": "physical"
+      },
+      "A.7.13": {
+        "title_de": "Gerätewartung",
+        "title_en": "Equipment maintenance",
+        "theme": "physical"
+      },
+      "A.7.14": {
+        "title_de": "Sichere Entsorgung oder Wiederverwendung von Geräten",
+        "title_en": "Secure disposal or re-use of equipment",
+        "theme": "physical"
+      },
+      "A.8.1": {
+        "title_de": "Endbenutzer-Endgeräte",
+        "title_en": "User endpoint devices",
+        "theme": "technological"
+      },
+      "A.8.2": {
+        "title_de": "Privilegierte Zugriffsrechte",
+        "title_en": "Privileged access rights",
+        "theme": "technological"
+      },
+      "A.8.3": {
+        "title_de": "Einschränkung des Informationszugriffs",
+        "title_en": "Information access restriction",
+        "theme": "technological"
+      },
+      "A.8.4": {
+        "title_de": "Zugriff auf Quellcode",
+        "title_en": "Access to source code",
+        "theme": "technological"
+      },
+      "A.8.5": {
+        "title_de": "Sichere Authentifizierung",
+        "title_en": "Secure authentication",
+        "theme": "technological"
+      },
+      "A.8.6": {
+        "title_de": "Kapazitätsmanagement",
+        "title_en": "Capacity management",
+        "theme": "technological"
+      },
+      "A.8.7": {
+        "title_de": "Schutz vor Schadsoftware",
+        "title_en": "Protection against malware",
+        "theme": "technological"
+      },
+      "A.8.8": {
+        "title_de": "Management technischer Schwachstellen",
+        "title_en": "Management of technical vulnerabilities",
+        "theme": "technological"
+      },
+      "A.8.9": {
+        "title_de": "Konfigurationsmanagement",
+        "title_en": "Configuration management",
+        "theme": "technological"
+      },
+      "A.8.10": {
+        "title_de": "Löschen von Informationen",
+        "title_en": "Information deletion",
+        "theme": "technological"
+      },
+      "A.8.11": {
+        "title_de": "Datenmaskierung",
+        "title_en": "Data masking",
+        "theme": "technological"
+      },
+      "A.8.12": {
+        "title_de": "Verhinderung von Datenabfluss (DLP)",
+        "title_en": "Data leakage prevention",
+        "theme": "technological"
+      },
+      "A.8.13": {
+        "title_de": "Informationssicherung (Backup)",
+        "title_en": "Information backup",
+        "theme": "technological"
+      },
+      "A.8.14": {
+        "title_de": "Redundanz der IT-Verarbeitung",
+        "title_en": "Redundancy of information processing facilities",
+        "theme": "technological"
+      },
+      "A.8.15": {
+        "title_de": "Protokollierung (Logging)",
+        "title_en": "Logging",
+        "theme": "technological"
+      },
+      "A.8.16": {
+        "title_de": "Überwachung (Monitoring)",
+        "title_en": "Monitoring activities",
+        "theme": "technological"
+      },
+      "A.8.17": {
+        "title_de": "Zeitsynchronisation",
+        "title_en": "Clock synchronization",
+        "theme": "technological"
+      },
+      "A.8.18": {
+        "title_de": "Privilegierte Hilfsprogramme",
+        "title_en": "Use of privileged utility programs",
+        "theme": "technological"
+      },
+      "A.8.19": {
+        "title_de": "Installation von Software auf Produktionssystemen",
+        "title_en": "Installation of software on operational systems",
+        "theme": "technological"
+      },
+      "A.8.20": {
+        "title_de": "Netzsicherheit",
+        "title_en": "Networks security",
+        "theme": "technological"
+      },
+      "A.8.21": {
+        "title_de": "Sicherheit von Netzdiensten",
+        "title_en": "Security of network services",
+        "theme": "technological"
+      },
+      "A.8.22": {
+        "title_de": "Trennung von Netzen",
+        "title_en": "Segregation of networks",
+        "theme": "technological"
+      },
+      "A.8.23": {
+        "title_de": "Web-Filterung",
+        "title_en": "Web filtering",
+        "theme": "technological"
+      },
+      "A.8.24": {
+        "title_de": "Einsatz von Kryptografie",
+        "title_en": "Use of cryptography",
+        "theme": "technological"
+      },
+      "A.8.25": {
+        "title_de": "Sicherer Entwicklungslebenszyklus",
+        "title_en": "Secure development life cycle",
+        "theme": "technological"
+      },
+      "A.8.26": {
+        "title_de": "Anforderungen an Anwendungssicherheit",
+        "title_en": "Application security requirements",
+        "theme": "technological"
+      },
+      "A.8.27": {
+        "title_de": "Sichere Systemarchitektur und -engineering",
+        "title_en": "Secure system architecture and engineering principles",
+        "theme": "technological"
+      },
+      "A.8.28": {
+        "title_de": "Sichere Programmierung",
+        "title_en": "Secure coding",
+        "theme": "technological"
+      },
+      "A.8.29": {
+        "title_de": "Sicherheitstests in Entwicklung und Abnahme",
+        "title_en": "Security testing in development and acceptance",
+        "theme": "technological"
+      },
+      "A.8.30": {
+        "title_de": "Fremdentwicklung (Outsourcing)",
+        "title_en": "Outsourced development",
+        "theme": "technological"
+      },
+      "A.8.31": {
+        "title_de": "Trennung Entwicklung/Test/Betrieb",
+        "title_en": "Separation of development, testing and operational environments",
+        "theme": "technological"
+      },
+      "A.8.32": {
+        "title_de": "Änderungsmanagement",
+        "title_en": "Change management",
+        "theme": "technological"
+      },
+      "A.8.33": {
+        "title_de": "Testinformationen",
+        "title_en": "Test information",
+        "theme": "technological"
+      },
+      "A.8.34": {
+        "title_de": "Schutz von IT-Systemen bei Audit-Tests",
+        "title_en": "Protection of information systems during audit testing",
+        "theme": "technological"
+      }
+    };
+    const DORA_META = {
+      "Art. 1": {
+        "title_de": "Gegenstand",
+        "title_en": "Subject matter",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 2": {
+        "title_de": "Begriffsbestimmungen",
+        "title_en": "Definitions",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 3": {
+        "title_de": "Allgemeine Grundsätze",
+        "title_en": "General principles",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 4": {
+        "title_de": "Zuständige Behörden",
+        "title_en": "Competent authorities",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 5": {
+        "title_de": "Governance-Strukturen",
+        "title_en": "Governance arrangements",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 6": {
+        "title_de": "IKT-Risikomanagement — allgemein",
+        "title_en": "ICT risk management framework — general",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 7": {
+        "title_de": "IKT-Systeme, -Protokolle und -Werkzeuge",
+        "title_en": "ICT systems, protocols and tools",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 8": {
+        "title_de": "Identifizierung",
+        "title_en": "Identification",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 9": {
+        "title_de": "Schutz und Prävention",
+        "title_en": "Protection and prevention",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 10": {
+        "title_de": "Erkennung",
+        "title_en": "Detection",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 11": {
+        "title_de": "Reaktion und Wiederherstellung",
+        "title_en": "Response and recovery",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 12": {
+        "title_de": "Backup und Wiederherstellung",
+        "title_en": "Backup and restoration",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 13": {
+        "title_de": "Lernen und Weiterentwicklung",
+        "title_en": "Learning and evolving",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 14": {
+        "title_de": "Kommunikation",
+        "title_en": "Communication",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 15": {
+        "title_de": "Allgemeiner Rahmen IKT-Risikomanagement",
+        "title_en": "General ICT risk management framework",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 16": {
+        "title_de": "Vereinfachter Rahmen IKT-Risikomanagement",
+        "title_en": "Simplified ICT risk management framework",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 17": {
+        "title_de": "Management IKT-bezogener Vorfälle",
+        "title_en": "ICT-related incident management process",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 18": {
+        "title_de": "Einstufung IKT-Vorfälle",
+        "title_en": "Classification of ICT-related incidents",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 19": {
+        "title_de": "Meldung erheblicher IKT-Vorfälle",
+        "title_en": "Reporting of major ICT-related incidents",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 20": {
+        "title_de": "Freiwillige Frühwarnung",
+        "title_en": "Voluntary early warning",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 21": {
+        "title_de": "Meldung von Cyber-Bedrohungen",
+        "title_en": "Notification of cyber threats",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 22": {
+        "title_de": "Informationsaustausch",
+        "title_en": "Information sharing",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 23": {
+        "title_de": "IKT-Drittanbieterrisiko — allgemein",
+        "title_en": "ICT third-party risk — general",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 24": {
+        "title_de": "Vorab-Bewertung IKT-Konzentration",
+        "title_en": "Preliminary assessment of ICT concentration",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 25": {
+        "title_de": "Wesentliche Vertragsbestimmungen",
+        "title_en": "Key contractual provisions",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 26": {
+        "title_de": "Exit-Strategien",
+        "title_en": "Exit strategies",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 27": {
+        "title_de": "Zusätzliche Rechte ggü. IKT-Drittanbietern",
+        "title_en": "Additional rights regarding ICT third-party providers",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 28": {
+        "title_de": "Unterauftragsvergabe kritischer IKT-Dienste",
+        "title_en": "Subcontracting of critical ICT services",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 29": {
+        "title_de": "Überwachung kritischer IKT-Drittanbieter",
+        "title_en": "Monitoring of critical ICT third-party providers",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 30": {
+        "title_de": "Benennung kritischer IKT-Drittanbieter",
+        "title_en": "Designation of critical ICT third-party providers",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 31": {
+        "title_de": "Aufsichtsrahmen",
+        "title_en": "Oversight framework",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 32": {
+        "title_de": "Aufsichtsaufgaben",
+        "title_en": "Oversight tasks",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 33": {
+        "title_de": "Befugnisse des Lead Overseer",
+        "title_en": "Powers of the Lead Overseer",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 34": {
+        "title_de": "Gebühren",
+        "title_en": "Fees",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      },
+      "Art. 35": {
+        "title_de": "Internationale Zusammenarbeit",
+        "title_en": "International cooperation",
+        "eur_lex_url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX%3A32022R2554"
+      }
+    };
+    const AUDIT_SCOPE = {
+      "version": "1.0.0",
+      "nis2": [
+        "Art. 20",
+        "Art. 21.2 a)",
+        "Art. 21.2 b)",
+        "Art. 21.2 c)",
+        "Art. 21.2 d)",
+        "Art. 21.2 e)",
+        "Art. 21.2 f)",
+        "Art. 21.2 g)",
+        "Art. 21.2 h)",
+        "Art. 21.2 i)",
+        "Art. 21.2 j)",
+        "Art. 23"
+      ],
+      "iso27001": [
+        "A.5.1",
+        "A.5.10",
+        "A.5.11",
+        "A.5.12",
+        "A.5.13",
+        "A.5.14",
+        "A.5.15",
+        "A.5.16",
+        "A.5.17",
+        "A.5.18",
+        "A.5.19",
+        "A.5.2",
+        "A.5.20",
+        "A.5.21",
+        "A.5.22",
+        "A.5.23",
+        "A.5.24",
+        "A.5.25",
+        "A.5.26",
+        "A.5.27",
+        "A.5.28",
+        "A.5.29",
+        "A.5.3",
+        "A.5.30",
+        "A.5.31",
+        "A.5.32",
+        "A.5.33",
+        "A.5.34",
+        "A.5.35",
+        "A.5.36",
+        "A.5.37",
+        "A.5.4",
+        "A.5.5",
+        "A.5.6",
+        "A.5.7",
+        "A.5.8",
+        "A.5.9",
+        "A.6.1",
+        "A.6.2",
+        "A.6.3",
+        "A.6.4",
+        "A.6.5",
+        "A.6.6",
+        "A.6.7",
+        "A.6.8",
+        "A.7.1",
+        "A.7.10",
+        "A.7.11",
+        "A.7.12",
+        "A.7.13",
+        "A.7.14",
+        "A.7.2",
+        "A.7.3",
+        "A.7.4",
+        "A.7.5",
+        "A.7.6",
+        "A.7.7",
+        "A.7.8",
+        "A.7.9",
+        "A.8.1",
+        "A.8.10",
+        "A.8.11",
+        "A.8.12",
+        "A.8.13",
+        "A.8.14",
+        "A.8.15",
+        "A.8.16",
+        "A.8.17",
+        "A.8.18",
+        "A.8.19",
+        "A.8.2",
+        "A.8.20",
+        "A.8.21",
+        "A.8.22",
+        "A.8.23",
+        "A.8.24",
+        "A.8.25",
+        "A.8.26",
+        "A.8.27",
+        "A.8.28",
+        "A.8.29",
+        "A.8.3",
+        "A.8.30",
+        "A.8.31",
+        "A.8.32",
+        "A.8.33",
+        "A.8.34",
+        "A.8.4",
+        "A.8.5",
+        "A.8.6",
+        "A.8.7",
+        "A.8.8",
+        "A.8.9"
+      ],
+      "dora": [
+        "Art. 1",
+        "Art. 10",
+        "Art. 11",
+        "Art. 12",
+        "Art. 13",
+        "Art. 14",
+        "Art. 15",
+        "Art. 16",
+        "Art. 17",
+        "Art. 18",
+        "Art. 19",
+        "Art. 2",
+        "Art. 20",
+        "Art. 21",
+        "Art. 22",
+        "Art. 23",
+        "Art. 24",
+        "Art. 25",
+        "Art. 26",
+        "Art. 27",
+        "Art. 28",
+        "Art. 29",
+        "Art. 3",
+        "Art. 30",
+        "Art. 31",
+        "Art. 32",
+        "Art. 33",
+        "Art. 34",
+        "Art. 35",
+        "Art. 4",
+        "Art. 5",
+        "Art. 6",
+        "Art. 7",
+        "Art. 8",
+        "Art. 9"
+      ]
+    };
+    // END_GSE_GENERATED_C
+
+    // BEGIN_GSE_GENERATED_B
+
     const PDCA = [
-      { solution_key: "Professional Services", gse_feature_ids: ["professional_services"], phases: { Plan: ["Implementierungs- und Onboarding-Planung", "Anforderungsanalyse und Rollenkonzept", "Gap-Analyse für MDR/Central/Firewall/Identity"], Do: ["MDR Guided Onboarding durchführen", "Sophos Central einrichten und konfigurieren", "Firewall- und Identity-Lösungen implementieren", "MFA und Policies aktivieren"], Check: ["Account Health Check (Central)", "Firewall- und Identity-Health-Checks", "Compliance- und Konfigurations-Status prüfen"], Act: ["Empfehlungen aus Health Checks umsetzen", "Konfiguration und Prozesse nachbessern"] } },
-      { solution_key: "Managed Risk", gse_feature_ids: ["managed_services_vuln"], phases: { Plan: ["Schwachstellenbewertung und Risikopriorisierung", "Attack-Surface-Analyse"], Do: ["Lizenz aktivieren & Kontakte hinterlegen", "Scanner-Appliance bereitstellen (VMware/Hyper-V)", "Externe & interne Scan-Ziele erfassen", "Ermittlungs- & Schwachstellen-Scans planen"], Check: ["Kontinuierliches Vulnerability Scanning", "Risiko-Reporting"], Act: ["Remediation-Empfehlungen umsetzen", "Patching-Priorisierung"] } },
-      { solution_key: "Advisory Services", gse_feature_ids: ["advisory_services"], phases: { Plan: ["Security Assessments planen", "Incident Readiness planen"], Do: ["Security Assessments durchführen", "Gap-Analyse durchführen", "Incident Readiness bewerten"], Check: ["Penetration Testing", "Red Team Exercises", "Wirksamkeit des Blue Teams prüfen"], Act: ["Maßnahmenempfehlungen umsetzen", "Incident Readiness verbessern"] } },
-      { solution_key: "MDR", gse_feature_ids: ["managed_services_mdr", "threat_intel_xops"], phases: { Plan: ["Threat-Landscape-Analyse", "Incident-Response-Planung"], Do: ["MDR-Lizenz aktivieren & Service einrichten", "Kontakte & Threat-Response-Modus festlegen", "Endpoint-Agent auf Geräte ausrollen", "Drittanbieter-Integrationen anbinden"], Check: ["24/7 Überwachung und Threat Hunting", "Telemetrie-Analyse und Korrelation"], Act: ["Incident Response Actions und Eindämmung", "Remediation-Empfehlungen"] } },
-      { solution_key: "Emergency Incident Response", gse_feature_ids: ["managed_services_ir"], phases: { Plan: ["Incident-Response-Plan-Erstellung"], Do: ["Hinterlegung der Sophos Emergency Incident Response-Kontakte", "Hinterlegung der Sophos Emergency Incident Response-Telefonnummer"], Check: ["Incident-Response-Plan-Überprüfung"], Act: ["Sofortreaktion bei Sicherheitsvorfällen", "Forensische Analyse und Eindämmung", "Wiederherstellungsunterstützung"] } },
-      { solution_key: "Phish Threat", gse_feature_ids: [], phases: { Plan: ["Awareness-Strategie planen", "Baseline-Sicherheitsbewusstsein erheben"], Do: ["Phishing-Simulationen durchführen", "Security-Awareness-Trainings ausrollen"], Check: ["Awareness-Level messen und Ergebnisse auswerten"], Act: ["Kampagnen und Inhalte anpassen", "Nachschulungen für Klicker durchführen"] } },
-      { solution_key: "Trainings und -Zertifizierungen", gse_feature_ids: [], phases: { Plan: ["Schulungsstrategie definieren"], Do: ["Schulungen und Zertifizierungen durchführen"] } },
-      { solution_key: "Central", gse_feature_ids: ["data_controls_cloud", "integrations", "data_lake", "ai_agentic_workflows"], phases: { Plan: [], Do: ["Lösungen zentral verwalten", "MFA für Admins"], Check: ["Dashboard-Monitoring, Compliance-Status"], Act: ["Risikobewertung durch die Klassifizierung der Severity in Events"] } },
-      { solution_key: "Endpoint", gse_feature_ids: ["data_controls_endpoint", "secops_edr"], phases: { Do: ["Endpunktschutz ausrollen", "Anti-Exploit/Ransomware aktivieren"], Check: ["EDR-Telemetrie analysieren", "Live Discover"], Act: ["Geräte isolieren", "Prozesse stoppen"] } },
-      { solution_key: "Firewall", gse_feature_ids: ["data_controls_firewall"], phases: { Do: ["Netzwerksegmentierung", "Regeln, VPN/SD-WAN"], Check: ["Traffic-Monitoring, IPS-Alerts"], Act: ["Automatische Sperrungen", "Policy-Anpassung"] } },
-      { solution_key: "ITDR", gse_feature_ids: ["data_controls_identity", "secops_itdr"], phases: { Do: ["Identitätsschutz, MFA, Conditional Access"], Check: ["Identitäts-Anomalien erkennen", "Zugriffsverhalten überwachen"], Act: ["Konten sperren / deaktivieren", "User Sessions beenden", "Passwort-Änderung erzwingen", "Rechte einschränken"] } },
-      { solution_key: "Email", gse_feature_ids: ["data_controls_email"], phases: { Plan: ["E-Mail-Sicherheitsrichtlinien definieren", "Anforderungen an Filterung und Verschlüsselung klären"], Do: ["E-Mail-Filtering, Anti-Phishing", "TLS, Anhangverschlüsselung"], Check: ["Filter- und Quarantäne-Reports prüfen", "Phishing-Erkennungsrate messen"], Act: ["Policies und Blocklisten anpassen", "Regeln nach False Positives optimieren"] } },
-      { solution_key: "NDR", gse_feature_ids: ["data_controls_network", "secops_ndr"], phases: { Do: ["Netzwerküberwachung implementieren"], Check: ["Netzwerkanomalien erkennen", "East-West-Traffic analysieren"] } },
-      { solution_key: "XDR", gse_feature_ids: ["secops_xdr", "data_controls_cloud", "data_lake"], phases: { Check: ["Cross-Domain-Korrelation, Threat Hunting", "Data-Lake-Analyse, Reporting"], Act: ["SOAR-Reaktion", "Playbooks ausführen"] } },
-      { solution_key: "ZTNA", gse_feature_ids: [], phases: { Do: ["Zero-Trust-Zugriff einrichten", "Geräte-/Identitätsprüfung"] } },
-      { solution_key: "Central Device Encryption", gse_feature_ids: [], phases: { Do: ["Festplattenverschlüsselung ausrollen"], Check: ["Verschlüsselungs-Compliance prüfen"] } },
-      { solution_key: "Mobile", gse_feature_ids: [], phases: { Do: ["Mobile Security ausrollen", "Compliance-Policies"] } },
-      { solution_key: "Wireless", gse_feature_ids: [], phases: { Do: ["WLAN-Sicherheit konfigurieren", "Verschlüsselung"] } },
-      { solution_key: "Active Threat Response", gse_feature_ids: ["active_threat_response"], phases: { Plan: ["ATR-Bereich festlegen (AP6, Sophos Switches)", "Anbindung MDR/XDR/NDR-Feed klären"], Do: ["ATR in Central für AP6 und Switches aktivieren", "ATR-API bei Bedarf anbinden"], Check: ["Isolierte Geräte prüfen", "MDR/XDR-Feed für ATR"], Act: ["Isolierungsrichtlinien anpassen", "ATR-Ereignisse nachbearbeiten"] } },
-      { solution_key: "Synchronized Security", gse_feature_ids: [], phases: { Do: ["Endpoint-Firewall-Kopplung", "Security Heartbeat"], Act: ["Automatische Hostisolierung"] } },
-      { solution_key: "Workspace Protection", gse_feature_ids: ["workspace_protection"], phases: { Plan: ["Ressourcen/Zugriff für ZTNA festlegen", "DNS- und Browser-Policies definieren", "RDP/SSH-Zugriffsrichtlinien festlegen"], Do: ["Protected Browser einrichten (Policies, Web-Zugriff)", "DNS Protection: Standorte, Policies, ggf. Endpoint-Anbindung", "ZTNA: Gateways, Resources & Access, Identity Provider", "RDP- und SSH-Zugriffsverwaltung einrichten"], Check: ["Protected Browser: Logs & Reports", "DNS Protection: Dashboard, Abfragen/Blockierungen", "ZTNA: Dashboard, Alerts", "RDP/SSH-Zugriffe prüfen"], Act: ["Policies anpassen", "RDP/SSH-Zugriff nachjustieren", "Alerts nachbearbeiten"] } }
+      {
+        "solution_key": "Professional Services",
+        "gse_feature_ids": [
+          "professional_services"
+        ],
+        "phases": {
+          "Plan": [
+            "Implementierungs- und Onboarding-Planung",
+            "Anforderungsanalyse und Rollenkonzept",
+            "Gap-Analyse für MDR/Central/Firewall/Identity"
+          ],
+          "Do": [
+            "MDR Guided Onboarding durchführen",
+            "Sophos Central einrichten und konfigurieren",
+            "Firewall- und Identity-Lösungen implementieren",
+            "MFA und Policies aktivieren"
+          ],
+          "Check": [
+            "Account Health Check (Central)",
+            "Firewall- und Identity-Health-Checks",
+            "Compliance- und Konfigurations-Status prüfen"
+          ],
+          "Act": [
+            "Empfehlungen aus Health Checks umsetzen",
+            "Konfiguration und Prozesse nachbessern"
+          ]
+        }
+      },
+      {
+        "solution_key": "Managed Risk",
+        "gse_feature_ids": [
+          "managed_services_vuln"
+        ],
+        "phases": {
+          "Plan": [
+            "Schwachstellenbewertung und Risikopriorisierung",
+            "Attack-Surface-Analyse"
+          ],
+          "Do": [
+            "Lizenz aktivieren & Kontakte hinterlegen",
+            "Scanner-Appliance bereitstellen (VMware/Hyper-V)",
+            "Externe & interne Scan-Ziele erfassen",
+            "Ermittlungs- & Schwachstellen-Scans planen"
+          ],
+          "Check": [
+            "Kontinuierliches Vulnerability Scanning",
+            "Risiko-Reporting"
+          ],
+          "Act": [
+            "Remediation-Empfehlungen umsetzen",
+            "Patching-Priorisierung"
+          ]
+        }
+      },
+      {
+        "solution_key": "Advisory Services",
+        "gse_feature_ids": [
+          "advisory_services"
+        ],
+        "phases": {
+          "Plan": [
+            "Security Assessments planen",
+            "Incident Readiness planen"
+          ],
+          "Do": [
+            "Security Assessments durchführen",
+            "Gap-Analyse durchführen",
+            "Incident Readiness bewerten"
+          ],
+          "Check": [
+            "Penetration Testing",
+            "Red Team Exercises",
+            "Wirksamkeit des Blue Teams prüfen"
+          ],
+          "Act": [
+            "Maßnahmenempfehlungen umsetzen",
+            "Incident Readiness verbessern"
+          ]
+        }
+      },
+      {
+        "solution_key": "MDR",
+        "gse_feature_ids": [
+          "managed_services_mdr",
+          "threat_intel_xops"
+        ],
+        "phases": {
+          "Plan": [
+            "Threat-Landscape-Analyse",
+            "Incident-Response-Planung"
+          ],
+          "Do": [
+            "MDR-Lizenz aktivieren & Service einrichten",
+            "Kontakte & Threat-Response-Modus festlegen",
+            "Endpoint-Agent auf Geräte ausrollen",
+            "Drittanbieter-Integrationen anbinden"
+          ],
+          "Check": [
+            "24/7 Überwachung und Threat Hunting",
+            "Telemetrie-Analyse und Korrelation"
+          ],
+          "Act": [
+            "Incident Response Actions und Eindämmung",
+            "Remediation-Empfehlungen"
+          ]
+        }
+      },
+      {
+        "solution_key": "Emergency Incident Response",
+        "gse_feature_ids": [
+          "managed_services_ir"
+        ],
+        "phases": {
+          "Plan": [
+            "Incident-Response-Plan-Erstellung"
+          ],
+          "Do": [
+            "Hinterlegung der Sophos Emergency Incident Response-Kontakte",
+            "Hinterlegung der Sophos Emergency Incident Response-Telefonnummer"
+          ],
+          "Check": [
+            "Incident-Response-Plan-Überprüfung"
+          ],
+          "Act": [
+            "Sofortreaktion bei Sicherheitsvorfällen",
+            "Forensische Analyse und Eindämmung",
+            "Wiederherstellungsunterstützung"
+          ]
+        }
+      },
+      {
+        "solution_key": "Phish Threat",
+        "gse_feature_ids": [],
+        "phases": {
+          "Plan": [
+            "Awareness-Strategie planen",
+            "Baseline-Sicherheitsbewusstsein erheben"
+          ],
+          "Do": [
+            "Phishing-Simulationen durchführen",
+            "Security-Awareness-Trainings ausrollen"
+          ],
+          "Check": [
+            "Awareness-Level messen und Ergebnisse auswerten"
+          ],
+          "Act": [
+            "Kampagnen und Inhalte anpassen",
+            "Nachschulungen für Klicker durchführen"
+          ]
+        }
+      },
+      {
+        "solution_key": "Trainings und -Zertifizierungen",
+        "gse_feature_ids": [],
+        "phases": {
+          "Plan": [
+            "Schulungsstrategie definieren"
+          ],
+          "Do": [
+            "Schulungen und Zertifizierungen durchführen"
+          ]
+        }
+      },
+      {
+        "solution_key": "Central",
+        "gse_feature_ids": [
+          "data_controls_cloud",
+          "integrations",
+          "data_lake",
+          "ai_agentic_workflows"
+        ],
+        "phases": {
+          "Plan": [],
+          "Do": [
+            "Lösungen zentral verwalten",
+            "MFA für Admins"
+          ],
+          "Check": [
+            "Dashboard-Monitoring, Compliance-Status"
+          ],
+          "Act": [
+            "Risikobewertung durch die Klassifizierung der Severity in Events"
+          ]
+        }
+      },
+      {
+        "solution_key": "Endpoint",
+        "gse_feature_ids": [
+          "data_controls_endpoint",
+          "secops_edr"
+        ],
+        "phases": {
+          "Do": [
+            "Endpunktschutz ausrollen",
+            "Anti-Exploit/Ransomware aktivieren"
+          ],
+          "Check": [
+            "EDR-Telemetrie analysieren",
+            "Live Discover"
+          ],
+          "Act": [
+            "Geräte isolieren",
+            "Prozesse stoppen"
+          ]
+        }
+      },
+      {
+        "solution_key": "Firewall",
+        "gse_feature_ids": [
+          "data_controls_firewall"
+        ],
+        "phases": {
+          "Do": [
+            "Netzwerksegmentierung",
+            "Regeln, VPN/SD-WAN"
+          ],
+          "Check": [
+            "Traffic-Monitoring, IPS-Alerts"
+          ],
+          "Act": [
+            "Automatische Sperrungen",
+            "Policy-Anpassung"
+          ]
+        }
+      },
+      {
+        "solution_key": "ITDR",
+        "gse_feature_ids": [
+          "data_controls_identity",
+          "secops_itdr"
+        ],
+        "phases": {
+          "Do": [
+            "Identitätsschutz, MFA, Conditional Access"
+          ],
+          "Check": [
+            "Identitäts-Anomalien erkennen",
+            "Zugriffsverhalten überwachen"
+          ],
+          "Act": [
+            "Konten sperren / deaktivieren",
+            "User Sessions beenden",
+            "Passwort-Änderung erzwingen",
+            "Rechte einschränken"
+          ]
+        }
+      },
+      {
+        "solution_key": "Email",
+        "gse_feature_ids": [
+          "data_controls_email"
+        ],
+        "phases": {
+          "Plan": [
+            "E-Mail-Sicherheitsrichtlinien definieren",
+            "Anforderungen an Filterung und Verschlüsselung klären"
+          ],
+          "Do": [
+            "E-Mail-Filtering, Anti-Phishing",
+            "TLS, Anhangverschlüsselung"
+          ],
+          "Check": [
+            "Filter- und Quarantäne-Reports prüfen",
+            "Phishing-Erkennungsrate messen"
+          ],
+          "Act": [
+            "Policies und Blocklisten anpassen",
+            "Regeln nach False Positives optimieren"
+          ]
+        }
+      },
+      {
+        "solution_key": "NDR",
+        "gse_feature_ids": [
+          "data_controls_network",
+          "secops_ndr"
+        ],
+        "phases": {
+          "Do": [
+            "Netzwerküberwachung implementieren"
+          ],
+          "Check": [
+            "Netzwerkanomalien erkennen",
+            "East-West-Traffic analysieren"
+          ]
+        }
+      },
+      {
+        "solution_key": "XDR",
+        "gse_feature_ids": [
+          "secops_xdr",
+          "data_controls_cloud",
+          "data_lake"
+        ],
+        "phases": {
+          "Check": [
+            "Cross-Domain-Korrelation, Threat Hunting",
+            "Data-Lake-Analyse, Reporting"
+          ],
+          "Act": [
+            "SOAR-Reaktion",
+            "Playbooks ausführen"
+          ]
+        }
+      },
+      {
+        "solution_key": "ZTNA",
+        "gse_feature_ids": [],
+        "phases": {
+          "Do": [
+            "Zero-Trust-Zugriff einrichten",
+            "Geräte-/Identitätsprüfung"
+          ]
+        }
+      },
+      {
+        "solution_key": "Central Device Encryption",
+        "gse_feature_ids": [],
+        "phases": {
+          "Do": [
+            "Festplattenverschlüsselung ausrollen"
+          ],
+          "Check": [
+            "Verschlüsselungs-Compliance prüfen"
+          ]
+        }
+      },
+      {
+        "solution_key": "Mobile",
+        "gse_feature_ids": [],
+        "phases": {
+          "Do": [
+            "Mobile Security ausrollen",
+            "Compliance-Policies"
+          ]
+        }
+      },
+      {
+        "solution_key": "Wireless",
+        "gse_feature_ids": [],
+        "phases": {
+          "Do": [
+            "WLAN-Sicherheit konfigurieren",
+            "Verschlüsselung"
+          ]
+        }
+      },
+      {
+        "solution_key": "Active Threat Response",
+        "gse_feature_ids": [
+          "active_threat_response"
+        ],
+        "phases": {
+          "Plan": [
+            "ATR-Bereich festlegen (AP6, Sophos Switches)",
+            "Anbindung MDR/XDR/NDR-Feed klären"
+          ],
+          "Do": [
+            "ATR in Central für AP6 und Switches aktivieren",
+            "ATR-API bei Bedarf anbinden"
+          ],
+          "Check": [
+            "Isolierte Geräte prüfen",
+            "MDR/XDR-Feed für ATR"
+          ],
+          "Act": [
+            "Isolierungsrichtlinien anpassen",
+            "ATR-Ereignisse nachbearbeiten"
+          ]
+        }
+      },
+      {
+        "solution_key": "Industry Collaboration",
+        "gse_feature_ids": [
+          "industry_collaboration"
+        ],
+        "phases": {
+          "Plan": [
+            "Branchen-spezifische Threat-Landscape evaluieren",
+            "ISAC- und Informationsaustausch mit Partnern planen"
+          ],
+          "Do": [
+            "Threat-Feeds und Branchenindikatoren in MDR/XDR einbinden",
+            "Austausch mit Branchenpartnern und ISACs nutzen"
+          ],
+          "Check": [
+            "Relevanz der Threat-Intelligence für das Umfeld prüfen"
+          ],
+          "Act": [
+            "Sharing- und Priorisierungsprozesse anpassen"
+          ]
+        }
+      },
+      {
+        "solution_key": "Synchronized Security",
+        "gse_feature_ids": [],
+        "phases": {
+          "Do": [
+            "Endpoint-Firewall-Kopplung",
+            "Security Heartbeat"
+          ],
+          "Act": [
+            "Automatische Hostisolierung"
+          ]
+        }
+      },
+      {
+        "solution_key": "Workspace Protection",
+        "gse_feature_ids": [
+          "workspace_protection"
+        ],
+        "phases": {
+          "Plan": [
+            "Ressourcen/Zugriff für ZTNA festlegen",
+            "DNS- und Browser-Policies definieren",
+            "RDP/SSH-Zugriffsrichtlinien festlegen"
+          ],
+          "Do": [
+            "Protected Browser einrichten (Policies, Web-Zugriff)",
+            "DNS Protection: Standorte, Policies, ggf. Endpoint-Anbindung",
+            "ZTNA: Gateways, Resources & Access, Identity Provider",
+            "RDP- und SSH-Zugriffsverwaltung einrichten"
+          ],
+          "Check": [
+            "Protected Browser: Logs & Reports",
+            "DNS Protection: Dashboard, Abfragen/Blockierungen",
+            "ZTNA: Dashboard, Alerts",
+            "RDP/SSH-Zugriffe prüfen"
+          ],
+          "Act": [
+            "Policies anpassen",
+            "RDP/SSH-Zugriff nachjustieren",
+            "Alerts nachbearbeiten"
+          ]
+        }
+      }
     ];
+    const PDCA_PHASES_EN = {
+      "Professional Services": {
+        "Plan": [
+          "Implementation and onboarding planning",
+          "Requirements analysis and role concept",
+          "Gap analysis for MDR/Central/Firewall/Identity"
+        ],
+        "Do": [
+          "Conduct MDR Guided Onboarding",
+          "Set up and configure Sophos Central",
+          "Implement firewall and identity solutions",
+          "Activate MFA and policies"
+        ],
+        "Check": [
+          "Account Health Check (Central)",
+          "Firewall and identity health checks",
+          "Review compliance and configuration status"
+        ],
+        "Act": [
+          "Implement health check recommendations",
+          "Refine configuration and processes"
+        ]
+      },
+      "Managed Risk": {
+        "Plan": [
+          "Vulnerability assessment and risk prioritisation",
+          "Attack surface analysis"
+        ],
+        "Do": [
+          "Activate licence & register contacts",
+          "Deploy scanner appliance (VMware/Hyper-V)",
+          "Capture external & internal scan targets",
+          "Schedule discovery & vulnerability scans"
+        ],
+        "Check": [
+          "Continuous vulnerability scanning",
+          "Risk reporting"
+        ],
+        "Act": [
+          "Implement remediation recommendations",
+          "Patch prioritisation"
+        ]
+      },
+      "Advisory Services": {
+        "Plan": [
+          "Plan security assessments",
+          "Plan incident readiness"
+        ],
+        "Do": [
+          "Conduct security assessments",
+          "Perform gap analysis",
+          "Evaluate incident readiness"
+        ],
+        "Check": [
+          "Penetration testing",
+          "Red team exercises",
+          "Assess blue team effectiveness"
+        ],
+        "Act": [
+          "Implement recommended measures",
+          "Improve incident readiness"
+        ]
+      },
+      "MDR": {
+        "Plan": [
+          "Threat landscape analysis",
+          "Incident response planning"
+        ],
+        "Do": [
+          "Activate MDR licence & set up service",
+          "Define contacts & threat response mode",
+          "Roll out endpoint agent to devices",
+          "Connect third-party integrations"
+        ],
+        "Check": [
+          "24/7 monitoring and threat hunting",
+          "Telemetry analysis and correlation"
+        ],
+        "Act": [
+          "Incident response actions and containment",
+          "Remediation recommendations"
+        ]
+      },
+      "Emergency Incident Response": {
+        "Plan": [
+          "Incident response plan creation"
+        ],
+        "Do": [
+          "Register Sophos Emergency Incident Response contacts",
+          "Register Sophos Emergency Incident Response phone number"
+        ],
+        "Check": [
+          "Incident response plan review"
+        ],
+        "Act": [
+          "Immediate response to security incidents",
+          "Forensic analysis and containment",
+          "Recovery support"
+        ]
+      },
+      "Phish Threat": {
+        "Plan": [
+          "Plan awareness strategy",
+          "Establish baseline security awareness"
+        ],
+        "Do": [
+          "Run phishing simulations",
+          "Roll out security awareness training"
+        ],
+        "Check": [
+          "Measure awareness level and evaluate results"
+        ],
+        "Act": [
+          "Adjust campaigns and content",
+          "Conduct follow-up training for clickers"
+        ]
+      },
+      "Trainings und -Zertifizierungen": {
+        "Plan": [
+          "Define training strategy"
+        ],
+        "Do": [
+          "Conduct training and certifications"
+        ]
+      },
+      "Central": {
+        "Plan": [],
+        "Do": [
+          "Centrally manage solutions",
+          "MFA for admins"
+        ],
+        "Check": [
+          "Dashboard monitoring, compliance status"
+        ],
+        "Act": [
+          "Risk assessment based on classifying event severities"
+        ]
+      },
+      "Endpoint": {
+        "Do": [
+          "Roll out endpoint protection",
+          "Activate anti-exploit/ransomware"
+        ],
+        "Check": [
+          "Analyse EDR telemetry",
+          "Live Discover"
+        ],
+        "Act": [
+          "Isolate devices",
+          "Terminate processes"
+        ]
+      },
+      "Firewall": {
+        "Do": [
+          "Network segmentation",
+          "Rules, VPN/SD-WAN"
+        ],
+        "Check": [
+          "Traffic monitoring, IPS alerts"
+        ],
+        "Act": [
+          "Automatic blocking",
+          "Policy adjustment"
+        ]
+      },
+      "ITDR": {
+        "Do": [
+          "Identity protection, MFA, Conditional Access"
+        ],
+        "Check": [
+          "Detect identity anomalies",
+          "Monitor access behaviour"
+        ],
+        "Act": [
+          "Lock / disable accounts",
+          "Terminate user sessions",
+          "Force password change",
+          "Restrict privileges"
+        ]
+      },
+      "Email": {
+        "Plan": [
+          "Define email security policies",
+          "Clarify filtering and encryption requirements"
+        ],
+        "Do": [
+          "Email filtering, anti-phishing",
+          "TLS, attachment encryption"
+        ],
+        "Check": [
+          "Review filter and quarantine reports",
+          "Measure phishing detection rates"
+        ],
+        "Act": [
+          "Adjust policies and blocklists",
+          "Tune rules after false positives"
+        ]
+      },
+      "NDR": {
+        "Do": [
+          "Implement network monitoring"
+        ],
+        "Check": [
+          "Detect network anomalies",
+          "Analyse east-west traffic"
+        ]
+      },
+      "XDR": {
+        "Check": [
+          "Cross-domain correlation, threat hunting",
+          "Data lake analysis, reporting"
+        ],
+        "Act": [
+          "SOAR response",
+          "Execute playbooks"
+        ]
+      },
+      "ZTNA": {
+        "Do": [
+          "Set up zero-trust access",
+          "Device/identity verification"
+        ]
+      },
+      "Central Device Encryption": {
+        "Do": [
+          "Roll out disk encryption"
+        ],
+        "Check": [
+          "Verify encryption compliance"
+        ]
+      },
+      "Mobile": {
+        "Do": [
+          "Roll out mobile security",
+          "Compliance policies"
+        ]
+      },
+      "Wireless": {
+        "Do": [
+          "Configure WLAN security",
+          "Encryption"
+        ]
+      },
+      "Active Threat Response": {
+        "Plan": [
+          "Define ATR scope (AP6, Sophos Switches)",
+          "Clarify MDR/XDR/NDR feed integration"
+        ],
+        "Do": [
+          "Enable ATR in Central for AP6 and Switches",
+          "Connect ATR API if needed"
+        ],
+        "Check": [
+          "Review isolated devices",
+          "MDR/XDR feed for ATR"
+        ],
+        "Act": [
+          "Adjust isolation policies",
+          "Follow up on ATR events"
+        ]
+      },
+      "Industry Collaboration": {
+        "Plan": [
+          "Evaluate sector-specific threat landscape",
+          "Plan ISAC and partner information sharing"
+        ],
+        "Do": [
+          "Integrate threat feeds and sector indicators into MDR/XDR",
+          "Leverage industry partner and ISAC exchange"
+        ],
+        "Check": [
+          "Review relevance of threat intelligence for your environment"
+        ],
+        "Act": [
+          "Adjust sharing and prioritisation processes"
+        ]
+      },
+      "Synchronized Security": {
+        "Do": [
+          "Endpoint-firewall coupling",
+          "Security Heartbeat"
+        ],
+        "Act": [
+          "Automatic host isolation"
+        ]
+      },
+      "Workspace Protection": {
+        "Plan": [
+          "Define resources/access for ZTNA",
+          "Define DNS and browser policies",
+          "Define RDP/SSH access policies"
+        ],
+        "Do": [
+          "Set up Protected Browser (policies, web access)",
+          "DNS Protection: locations, policies, endpoint integration if needed",
+          "ZTNA: gateways, resources & access, identity providers",
+          "Set up RDP and SSH access management"
+        ],
+        "Check": [
+          "Protected Browser: logs & reports",
+          "DNS Protection: dashboard, queries/blocks",
+          "ZTNA: dashboard, alerts",
+          "Review RDP/SSH access"
+        ],
+        "Act": [
+          "Adjust policies",
+          "Refine RDP/SSH access",
+          "Follow up on alerts"
+        ]
+      }
+    };
+    // END_GSE_GENERATED_B
 
     const pdcaByFeatureId = {};
     PDCA.forEach(p => {
@@ -1159,33 +3377,9 @@
       return null;
     }
 
-    const PDCA_PHASES_EN = {
-      "Professional Services": { Plan: ["Implementation and onboarding planning", "Requirements analysis and role concept", "Gap analysis for MDR/Central/Firewall/Identity"], Do: ["Conduct MDR Guided Onboarding", "Set up and configure Sophos Central", "Implement firewall and identity solutions", "Activate MFA and policies"], Check: ["Account Health Check (Central)", "Firewall and identity health checks", "Review compliance and configuration status"], Act: ["Implement health check recommendations", "Refine configuration and processes"] },
-      "Managed Risk": { Plan: ["Vulnerability assessment and risk prioritisation", "Attack surface analysis"], Do: ["Activate licence & register contacts", "Deploy scanner appliance (VMware/Hyper-V)", "Capture external & internal scan targets", "Schedule discovery & vulnerability scans"], Check: ["Continuous vulnerability scanning", "Risk reporting"], Act: ["Implement remediation recommendations", "Patch prioritisation"] },
-      "Advisory Services": { Plan: ["Plan security assessments", "Plan incident readiness"], Do: ["Conduct security assessments", "Perform gap analysis", "Evaluate incident readiness"], Check: ["Penetration testing", "Red team exercises", "Assess blue team effectiveness"], Act: ["Implement recommended measures", "Improve incident readiness"] },
-      "MDR": { Plan: ["Threat landscape analysis", "Incident response planning"], Do: ["Activate MDR licence & set up service", "Define contacts & threat response mode", "Roll out endpoint agent to devices", "Connect third-party integrations"], Check: ["24/7 monitoring and threat hunting", "Telemetry analysis and correlation"], Act: ["Incident response actions and containment", "Remediation recommendations"] },
-      "Emergency Incident Response": { Plan: ["Incident response plan creation"], Do: ["Register Sophos Emergency Incident Response contacts", "Register Sophos Emergency Incident Response phone number"], Check: ["Incident response plan review"], Act: ["Immediate response to security incidents", "Forensic analysis and containment", "Recovery support"] },
-      "Phish Threat": { Plan: ["Plan awareness strategy", "Establish baseline security awareness"], Do: ["Run phishing simulations", "Roll out security awareness training"], Check: ["Measure awareness level and evaluate results"], Act: ["Adjust campaigns and content", "Conduct follow-up training for clickers"] },
-      "Trainings und -Zertifizierungen": { Plan: ["Define training strategy"], Do: ["Conduct training and certifications"] },
-      "Central": { Plan: [], Do: ["Centrally manage solutions", "MFA for admins"], Check: ["Dashboard monitoring, compliance status"], Act: ["Risk assessment based on classifying event severities"] },
-      "Endpoint": { Do: ["Roll out endpoint protection", "Activate anti-exploit/ransomware"], Check: ["Analyse EDR telemetry", "Live Discover"], Act: ["Isolate devices", "Terminate processes"] },
-      "Firewall": { Do: ["Network segmentation", "Rules, VPN/SD-WAN"], Check: ["Traffic monitoring, IPS alerts"], Act: ["Automatic blocking", "Policy adjustment"] },
-      "ITDR": { Do: ["Identity protection, MFA, Conditional Access"], Check: ["Detect identity anomalies", "Monitor access behaviour"], Act: ["Lock / disable accounts", "Terminate user sessions", "Force password change", "Restrict privileges"] },
-      "Email": { Plan: ["Define email security policies", "Clarify filtering and encryption requirements"], Do: ["Email filtering, anti-phishing", "TLS, attachment encryption"], Check: ["Review filter and quarantine reports", "Measure phishing detection rates"], Act: ["Adjust policies and blocklists", "Tune rules after false positives"] },
-      "NDR": { Do: ["Implement network monitoring"], Check: ["Detect network anomalies", "Analyse east-west traffic"] },
-      "XDR": { Check: ["Cross-domain correlation, threat hunting", "Data lake analysis, reporting"], Act: ["SOAR response", "Execute playbooks"] },
-      "ZTNA": { Do: ["Set up zero-trust access", "Device/identity verification"] },
-      "Central Device Encryption": { Do: ["Roll out disk encryption"], Check: ["Verify encryption compliance"] },
-      "Mobile": { Do: ["Roll out mobile security", "Compliance policies"] },
-      "Wireless": { Do: ["Configure WLAN security", "Encryption"] },
-      "Active Threat Response": { Plan: ["Define ATR scope (AP6, Sophos Switches)", "Clarify MDR/XDR/NDR feed integration"], Do: ["Enable ATR in Central for AP6 and Switches", "Connect ATR API if needed"], Check: ["Review isolated devices", "MDR/XDR feed for ATR"], Act: ["Adjust isolation policies", "Follow up on ATR events"] },
-      "Synchronized Security": { Do: ["Endpoint-firewall coupling", "Security Heartbeat"], Act: ["Automatic host isolation"] },
-      "Workspace Protection": { Plan: ["Define resources/access for ZTNA", "Define DNS and browser policies", "Define RDP/SSH access policies"], Do: ["Set up Protected Browser (policies, web access)", "DNS Protection: locations, policies, endpoint integration if needed", "ZTNA: gateways, resources & access, identity providers", "Set up RDP and SSH access management"], Check: ["Protected Browser: logs & reports", "DNS Protection: dashboard, queries/blocks", "ZTNA: dashboard, alerts", "Review RDP/SSH access"], Act: ["Adjust policies", "Refine RDP/SSH access", "Follow up on alerts"] }
-    };
-
     const UI_LANG = {
       de: {
-        emptyPanel: "Klicken Sie auf einen Bereich in der Plattform, um die Sophos-Lösungen und NIS-2-Kapitel-IV-Anforderungen anzuzeigen.",
+        emptyPanel: "Wählen Sie eine Anforderung in der Kontrollliste oder klicken Sie auf ein Plattform-Element, um Zuordnungen zu sehen.",
         solutionLabel: "Sophos-Lösung(en)",
         nis2Label: "NIS-2 / NISG – Anforderungen",
         pdcaLabel: "PDCA-Zyklus",
@@ -1203,8 +3397,8 @@
         btnCopyOpp: "Text für Opportunität kopieren",
         btnPrint: "Print / PDF",
         oppCopied: "Text für Opportunität wurde in die Zwischenablage kopiert.",
-        filterLabel: "NIS-2-Artikel-Ansicht",
-        filterPlaceholder: "Nach NIS-2-Artikel filtern",
+        filterLabel: "Kontrollliste (Anforderungen)",
+        filterPlaceholder: "Anforderung wählen",
         btnHome: "Zur Hauptansicht",
         riskCalcTitle: "Risikoreduktion – nächster PDCA-Schritt",
         riskCalcIntro: "Wenn Sie als Nächstes umsetzen:",
@@ -1225,10 +3419,26 @@
         proofSectionCta: "Mehr zu Underwriting-Grade Proof (Sophos & Spektrum)",
         proofSectionContact: "Sophos Insurability anfragen",
         riskEffectivenessNis2Hint: "Entspricht NIS2 Art. 21.2 f) – Bewertung der Wirksamkeit von Risikomanagementmaßnahmen.",
-        riskReifegradHint: "Diese Wirksamkeitsbewertung unterstützt NIS2 Art. 21.2 f) und die Reifegrad-Dimension Risikomanagementmaßnahmen (Kapitel IV). Vollständige Reifegrad-Erhebung: reference-nis2-kunde-reifegrad."
+        riskReifegradHint: "Diese Wirksamkeitsbewertung unterstützt NIS2 Art. 21.2 f) und die Reifegrad-Dimension Risikomanagementmaßnahmen (Kapitel IV). Vollständige Reifegrad-Erhebung: reference-nis2-kunde-reifegrad.",
+        stepBadge: "SCHRITT 1: KONTROLLLISTE",
+        flowStep1: "Kontrollpunkt",
+        flowStep2: "Plattform",
+        flowStep3: "Abdeckung",
+        trustLabel: "Aktuelle Vermögenswerte",
+        trustFull: "Voller Stack (Trust)",
+        trustProduct: "Produkt-Fokus",
+        checklistAll: "Alle",
+        checklistRelevant: "Nur zutreffende",
+        checklistGaps: "Lücken",
+        reqsLabelNis2: "NIS-2 / NISG – Anforderungen",
+        reqsLabelIso: "ISO/IEC 27001:2022 – Anhang A (Kontrollen)",
+        reqsLabelDora: "DORA – Artikel",
+        mappingCountLine: "Zuordnung(en) zu Sophos-Lösungen / Plattform",
+        trustFooter: "Illustrative Zuordnung; verbindliche Texte in den Primärquellen. ",
+        trustCenterLink: "Sophos Trust Center"
       },
       en: {
-        emptyPanel: "Click on an area in the platform to view Sophos solutions and NIS-2 Chapter IV requirements.",
+        emptyPanel: "Pick a requirement in the checklist or click a platform area to see mappings.",
         solutionLabel: "Sophos Solution(s)",
         nis2Label: "NIS-2 / NISG – Requirements",
         pdcaLabel: "PDCA Cycle",
@@ -1246,8 +3456,8 @@
         btnCopyOpp: "Copy opportunity text",
         btnPrint: "Print / PDF",
         oppCopied: "Opportunity text has been copied to the clipboard.",
-        filterLabel: "NIS-2 article view",
-        filterPlaceholder: "Filter by NIS-2 article",
+        filterLabel: "Checklist (requirements)",
+        filterPlaceholder: "Select a requirement",
         btnHome: "Back to main view",
         riskCalcTitle: "Risk reduction – next PDCA step",
         riskCalcIntro: "If you implement next:",
@@ -1268,7 +3478,23 @@
         proofSectionCta: "More on underwriting-grade proof (Sophos & Spektrum)",
         proofSectionContact: "Contact Sophos Insurability",
         riskEffectivenessNis2Hint: "Maps to NIS2 Art. 21.2 f) – assessment of the effectiveness of cybersecurity risk-management measures.",
-        riskReifegradHint: "This effectiveness assessment supports NIS2 Art. 21.2 f) and the maturity dimension 'risk-management measures' (Chapter IV). Full maturity assessment: reference-nis2-kunde-reifegrad."
+        riskReifegradHint: "This effectiveness assessment supports NIS2 Art. 21.2 f) and the maturity dimension 'risk-management measures' (Chapter IV). Full maturity assessment: reference-nis2-kunde-reifegrad.",
+        stepBadge: "STEP 1: CHECKLIST",
+        flowStep1: "Control",
+        flowStep2: "Platform",
+        flowStep3: "Coverage",
+        trustLabel: "Current assets",
+        trustFull: "Full stack (trust)",
+        trustProduct: "Product focus",
+        checklistAll: "All",
+        checklistRelevant: "Relevant only",
+        checklistGaps: "Gaps",
+        reqsLabelNis2: "NIS-2 / NISG – Requirements",
+        reqsLabelIso: "ISO/IEC 27001:2022 – Annex A (controls)",
+        reqsLabelDora: "DORA – Articles",
+        mappingCountLine: "Mapping(s) to Sophos solutions / platform",
+        trustFooter: "Illustrative mapping; authoritative wording in primary sources. ",
+        trustCenterLink: "Sophos Trust Center"
       }
     };
 
@@ -1276,26 +3502,97 @@
     let currentMapping = null;
     let stackSelection = new Set();
     let currentMode = 'single'; // 'single' | 'stack' | 'article'
+    let selectedRequirementKey = null;
 
     const mapById = Object.fromEntries(MAPPINGS.map(m => [m.gse_feature_id, m]));
-    const ALL_NIS2_ARTICLES = Object.keys(NISG_RIS);
+    const FEATURE_IDS_TRUST_SUPPLEMENT = new Set(['managed_services_mdr', 'managed_services_ir', 'managed_services_vuln', 'advisory_services']);
 
-    function getArticlesForMapping(mapping) {
-      const raw = (currentLang === 'en' && mapping.nis2_articles_en) ? mapping.nis2_articles_en : mapping.nis2_articles;
-      if (!raw) return [];
-      return raw.filter(a => a.startsWith('Art.'));
+    let currentFramework = (FRAMEWORK_REGISTRY && FRAMEWORK_REGISTRY.default_framework) || 'nis2';
+    let checklistMode = 'all';
+    let trustMode = 'full';
+
+    function getReqFieldName(fw) {
+      if (fw === 'nis2') return 'nis2_articles';
+      if (fw === 'iso27001') return 'iso27001_controls';
+      if (fw === 'dora') return 'dora_articles';
+      return 'nis2_articles';
+    }
+    function getReqFieldNameEn(fw) {
+      if (fw === 'nis2') return 'nis2_articles_en';
+      if (fw === 'iso27001') return 'iso27001_controls_en';
+      if (fw === 'dora') return 'dora_articles_en';
+      return 'nis2_articles_en';
     }
 
-    function getAllMappingsForArticles(articleKeys) {
-      const ids = [];
-      MAPPINGS.forEach(m => {
-        const arts = m.nis2_articles || [];
-        if (arts.some(a => articleKeys.includes(a))) ids.push(m);
-      });
+    function getRequirementsForMappingFw(mapping, fw) {
+      const field = getReqFieldName(fw);
+      const fieldEn = getReqFieldNameEn(fw);
+      const raw = (currentLang === 'en' && mapping[fieldEn]) ? mapping[fieldEn] : mapping[field];
+      if (!raw || !Array.isArray(raw)) return [];
+      if (fw === 'nis2') return raw.filter(a => typeof a === 'string' && a.startsWith('Art.'));
+      return raw.filter(Boolean);
+    }
+
+    function getRequirementsForMapping(mapping) {
+      return getRequirementsForMappingFw(mapping, currentFramework);
+    }
+
+    function getArticlesForMapping(mapping) {
+      return getRequirementsForMappingFw(mapping, 'nis2');
+    }
+
+    function getRequirementsLabel() {
+      const ui = UI_LANG[currentLang];
+      if (currentFramework === 'iso27001') return ui.reqsLabelIso;
+      if (currentFramework === 'dora') return ui.reqsLabelDora;
+      return ui.reqsLabelNis2;
+    }
+
+    function getAuditIdsForFramework(fw) {
+      const a = AUDIT_SCOPE[fw];
+      return Array.isArray(a) ? a.slice() : [];
+    }
+
+    function getAllMetaIdsForFramework(fw) {
+      if (fw === 'nis2') return Object.keys(NISG_RIS);
+      if (fw === 'iso27001') return Object.keys(ISO27001_META);
+      if (fw === 'dora') return Object.keys(DORA_META);
+      return [];
+    }
+
+    function hasQualifiedCoverage(reqId, fw) {
+      const hits = MAPPINGS.filter(m => getRequirementsForMappingFw(m, fw).includes(reqId));
+      if (!hits.length) return false;
+      return hits.some(m => !FEATURE_IDS_TRUST_SUPPLEMENT.has(m.gse_feature_id));
+    }
+
+    function hasGap(reqId, fw) {
+      if (!getAuditIdsForFramework(fw).includes(reqId)) return false;
+      return !hasQualifiedCoverage(reqId, fw);
+    }
+
+    function sortReqIds(a, b) {
+      return String(a).localeCompare(String(b), undefined, { numeric: true });
+    }
+
+    function getChecklistIds() {
+      const fw = currentFramework;
+      let ids = getAuditIdsForFramework(fw);
+      if (!ids.length) ids = getAllMetaIdsForFramework(fw);
+      ids = [...new Set(ids)].sort(sortReqIds);
+      if (checklistMode === 'relevant') {
+        ids = ids.filter(id => MAPPINGS.some(m => getRequirementsForMappingFw(m, fw).includes(id)));
+      } else if (checklistMode === 'gaps') {
+        ids = ids.filter(id => hasGap(id, fw));
+      }
       return ids;
     }
 
-    function formatRequirement(articleText) {
+    function getGlobalMappingCountForReq(reqId, fw) {
+      return MAPPINGS.filter(m => getRequirementsForMappingFw(m, fw).includes(reqId)).length;
+    }
+
+    function formatRequirementNis2(articleText) {
       const entry = NISG_RIS[articleText];
       const ui = UI_LANG[currentLang];
       const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : null;
@@ -1306,7 +3603,96 @@
             <div class="nisg-ref">${escapeHtml(ui.nisgPrefix)}: ${escapeHtml(entry.nisg_ref)} · <a href="${RIS_BASE}" target="_blank" rel="noopener">${escapeHtml(ui.risLink)}</a></div>
           </div>`;
       }
-      return `<div class="req-item">${escapeHtml(articleText)}${articleText.indexOf('Art.') !== -1 ? ' · <a href="' + RIS_BASE + '" target="_blank" rel="noopener">' + escapeHtml(ui.risLink) + '</a>' : ''}</div>`;
+      return `<div class="req-item">${escapeHtml(articleText)}${String(articleText).indexOf('Art.') !== -1 ? ' · <a href="' + RIS_BASE + '" target="_blank" rel="noopener">' + escapeHtml(ui.risLink) + '</a>' : ''}</div>`;
+    }
+
+    function formatRequirementIso(id) {
+      const entry = ISO27001_META[id];
+      const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : '';
+      const theme = entry && entry.theme ? ` · ${escapeHtml(entry.theme)}` : '';
+      return `<div class="req-item"><strong>${escapeHtml(id)}</strong> – ${escapeHtml(title)}${theme}</div>`;
+    }
+
+    function formatRequirementDora(id) {
+      const entry = DORA_META[id];
+      const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : '';
+      const url = entry && entry.eur_lex_url ? entry.eur_lex_url : '';
+      const link = url ? ` · <a href="${escapeHtml(url)}" target="_blank" rel="noopener">EUR-Lex</a>` : '';
+      return `<div class="req-item"><strong>${escapeHtml(id)}</strong> – ${escapeHtml(title)}${link}</div>`;
+    }
+
+    function formatRequirementId(id) {
+      if (currentFramework === 'iso27001') return formatRequirementIso(id);
+      if (currentFramework === 'dora') return formatRequirementDora(id);
+      return formatRequirementNis2(id);
+    }
+
+    function formatRequirement(articleText) {
+      return formatRequirementNis2(articleText);
+    }
+
+    function getAllMappingsForArticles(articleKeys) {
+      const fw = currentFramework;
+      const ids = [];
+      MAPPINGS.forEach(m => {
+        const reqs = getRequirementsForMappingFw(m, fw);
+        if (reqs.some(a => articleKeys.includes(a))) ids.push(m);
+      });
+      return ids;
+    }
+
+    function renderFlowHtml(activeStep) {
+      const ui = UI_LANG[currentLang];
+      function step(n, key) {
+        return `<span class="flow-step${n === activeStep ? ' active' : ''}">${n}. ${escapeHtml(ui[key])}</span>`;
+      }
+      return `<div class="explorer-flow">${step(1, 'flowStep1')}${step(2, 'flowStep2')}${step(3, 'flowStep3')}</div>`;
+    }
+
+    function trustFooterHtml() {
+      const ui = UI_LANG[currentLang];
+      return `<div class="trust-footer-row">${escapeHtml(ui.trustFooter)}<a href="https://www.sophos.com/de-de/trust" target="_blank" rel="noopener">${escapeHtml(ui.trustCenterLink)}</a></div>`;
+    }
+
+    function updateFrameworkSubtitle() {
+      const el = document.getElementById('frameworkSubtitle');
+      if (!el || !FRAMEWORK_REGISTRY.frameworks) return;
+      const fw = FRAMEWORK_REGISTRY.frameworks.find(f => f.id === currentFramework);
+      el.textContent = fw ? (currentLang === 'en' ? (fw.description_en || '') : (fw.description_de || '')) : '';
+    }
+
+    function syncFrameworkToggle() {
+      document.querySelectorAll('#frameworkToggle button').forEach(b => {
+        b.classList.toggle('active', b.dataset.fw === currentFramework);
+      });
+    }
+
+    function syncChecklistFilterButtons() {
+      document.querySelectorAll('#checklistFilter button').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === checklistMode);
+      });
+    }
+
+    function syncTrustUi() {
+      const sel = document.getElementById('trustSelect');
+      if (sel) sel.value = trustMode;
+      const lab = document.getElementById('trustSelectLabel');
+      if (lab) {
+        const ui = UI_LANG[currentLang];
+        lab.textContent = ui.trustLabel;
+      }
+      if (sel) {
+        sel.querySelector('option[value="full"]').textContent = UI_LANG[currentLang].trustFull;
+        sel.querySelector('option[value="product"]').textContent = UI_LANG[currentLang].trustProduct;
+      }
+    }
+
+    function pushFrameworkUrl() {
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('framework', currentFramework);
+        window.history.replaceState({}, '', u.toString());
+      } catch (_) {}
     }
 
     function renderPdcaBlock(featureId, solutionKey) {
@@ -1467,9 +3853,10 @@
       panel.classList.remove('empty');
       const ui = UI_LANG[currentLang];
       const pdcaHtml = renderPdcaBlock(mapping.gse_feature_id, mapping.solution_key);
-      const articles = ((currentLang === 'en' && mapping.nis2_articles_en) ? mapping.nis2_articles_en : mapping.nis2_articles);
-      const nis2ArticlesHtml = articles.map(formatRequirement).join('');
+      const reqList = getRequirementsForMapping(mapping);
+      const nis2ArticlesHtml = reqList.map(formatRequirementId).join('');
       const collateralText = buildCollateralText(mapping);
+      const reqLabel = getRequirementsLabel();
       const solutionValue =
         mapping.gse_feature_id === 'data_controls_network'
           ? (currentLang === 'en'
@@ -1477,6 +3864,7 @@
               : 'NDR – Sophos Switch & Sophos WLAN')
           : mapping.solution_key;
       panel.innerHTML = `
+        ${renderFlowHtml(3)}
         <h2>${escapeHtml(mapping.gse_label)}</h2>
         <div class="detail-actions">
           <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
@@ -1503,13 +3891,14 @@
         ${renderRiskCalculatorBlock(mapping)}
         ${renderProofSection()}
         <div class="detail-section">
-          <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+          <div class="detail-label">${escapeHtml(reqLabel)}</div>
           <div class="nis2-list">
             ${nis2ArticlesHtml}
           </div>
         </div>
         ${collateralText}
         <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
+        ${trustFooterHtml()}
       `;
       attachPanelHandlers(mapping);
       initRiskCalculator();
@@ -1584,6 +3973,7 @@
     function goToMainView() {
       currentMode = 'single';
       currentMapping = null;
+      selectedRequirementKey = null;
       document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
       renderEmptyPanel();
     }
@@ -1591,13 +3981,17 @@
     function selectFeature(id, mapping) {
       currentMapping = mapping;
       currentMode = 'single';
+      selectedRequirementKey = null;
       showDetail(mapping);
       setActiveBox(id);
+      const reqs = getRequirementsForMapping(mapping);
       notifyParent('select', {
         id: mapping.gse_feature_id,
         label: mapping.gse_label,
         solution: mapping.solution_key,
-        nis2_articles: mapping.nis2_articles
+        framework: currentFramework,
+        requirements: reqs,
+        nis2_articles: reqs
       });
     }
 
@@ -1620,8 +4014,14 @@
       document.querySelectorAll('.lang-toggle button').forEach(b => {
         b.classList.toggle('active', b.dataset.lang === lang);
       });
+      updateFrameworkSubtitle();
+      syncTrustUi();
+      const stepEl = document.getElementById('stepBadge');
+      if (stepEl) stepEl.textContent = UI_LANG[currentLang].stepBadge;
       if (currentMapping) {
         showDetail(currentMapping);
+      } else if (currentMode === 'article' && selectedRequirementKey) {
+        showArticleView(selectedRequirementKey);
       } else {
         renderEmptyPanel();
       }
@@ -1662,18 +4062,30 @@
       });
     })();
 
+    function getReqTitleLine(id) {
+      if (currentFramework === 'nis2') {
+        const e = NISG_RIS[id];
+        return e ? (currentLang === 'en' ? e.title_en : e.title_de) : id;
+      }
+      if (currentFramework === 'iso27001') {
+        const e = ISO27001_META[id];
+        return e ? (currentLang === 'en' ? e.title_en : e.title_de) : id;
+      }
+      if (currentFramework === 'dora') {
+        const e = DORA_META[id];
+        return e ? (currentLang === 'en' ? e.title_en : e.title_de) : id;
+      }
+      return id;
+    }
+
     function buildCollateralText(mapping) {
       const ui = UI_LANG[currentLang];
-      const articles = getArticlesForMapping(mapping);
+      const articles = getRequirementsForMapping(mapping);
       if (!articles.length) return '';
-      const lines = articles.map(a => {
-        const entry = NISG_RIS[a];
-        const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : a;
-        return '- ' + a + ' – ' + title;
-      });
+      const lines = articles.map(a => '- ' + a + ' – ' + getReqTitleLine(a));
       const header = currentLang === 'en'
-        ? 'How this supports NIS-2 in presales:'
-        : 'Mehrwert in NIS-2-Presales-Gesprächen:';
+        ? 'How this supports compliance mapping in presales:'
+        : 'Mehrwert in Compliance-Presales-Gesprächen:';
       return `
         <div class="detail-section">
           <div class="detail-label">${escapeHtml(ui.collateralLabel)}</div>
@@ -1688,29 +4100,29 @@
 
     function buildOpportunitySnippetSingle(mapping) {
       const ui = UI_LANG[currentLang];
-      const articles = getArticlesForMapping(mapping);
+      const articles = getRequirementsForMapping(mapping);
+      const fwName = currentFramework.toUpperCase();
       const title = currentLang === 'en'
-        ? `NIS-2 – Sophos ${mapping.gse_label}`
-        : `NIS-2 – Sophos ${mapping.gse_label}`;
+        ? `${fwName} – Sophos ${mapping.gse_label}`
+        : `${fwName} – Sophos ${mapping.gse_label}`;
       const header = `# ${title}\n\n`;
       const solLabel = currentLang === 'en' ? 'Sophos solution(s)' : 'Sophos-Lösung(en)';
       let md = header;
+      md += `**Framework:** ${currentFramework}\n`;
       md += `**${solLabel}:** ${mapping.solution_key}\n\n`;
       if (articles.length) {
         const listTitle = currentLang === 'en'
-          ? 'Covered NIS-2 articles (Chapter IV):'
-          : 'Abgedeckte NIS-2-Artikel (Kapitel IV):';
+          ? 'Covered requirements:'
+          : 'Abgedeckte Anforderungen:';
         md += `${listTitle}\n`;
         articles.forEach(a => {
-          const entry = NISG_RIS[a];
-          const titleText = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : '';
-          md += `- **${a}** – ${titleText}\n`;
+          md += `- **${a}** – ${getReqTitleLine(a)}\n`;
         });
         md += '\n';
       }
       const footer = currentLang === 'en'
-        ? '_Source: Sophos NIS-2 mapping (no legal advice)._'
-        : '_Quelle: Sophos NIS-2-Mapping (keine Rechtsberatung)._';
+        ? '_Source: Sophos mapping (illustrative; no legal advice)._'
+        : '_Quelle: Sophos-Mapping (illustrativ; keine Rechtsberatung)._';
       md += footer + '\n';
       return md;
     }
@@ -1718,34 +4130,33 @@
     function buildOpportunitySnippetStack(mappings) {
       const ui = UI_LANG[currentLang];
       const title = currentLang === 'en'
-        ? 'NIS-2 – Sophos Stack'
-        : 'NIS-2 – Sophos Stack';
+        ? `${currentFramework.toUpperCase()} – Sophos Stack`
+        : `${currentFramework.toUpperCase()} – Sophos Stack`;
       const header = `# ${title}\n\n`;
       const solLabel = currentLang === 'en' ? 'Sophos solutions' : 'Sophos-Lösungen';
       let md = header;
+      md += `**Framework:** ${currentFramework}\n`;
       const solList = mappings.map(m => m.solution_key + ' (' + m.gse_label + ')');
       md += `**${solLabel}:** ${solList.join(', ')}\n\n`;
       const allArticles = [];
       mappings.forEach(m => {
-        getArticlesForMapping(m).forEach(a => {
+        getRequirementsForMapping(m).forEach(a => {
           if (!allArticles.includes(a)) allArticles.push(a);
         });
       });
       if (allArticles.length) {
         const listTitle = currentLang === 'en'
-          ? 'Jointly covered NIS-2 articles (Chapter IV):'
-          : 'Gemeinsam abgedeckte NIS-2-Artikel (Kapitel IV):';
+          ? 'Jointly covered requirements:'
+          : 'Gemeinsam abgedeckte Anforderungen:';
         md += `${listTitle}\n`;
         allArticles.forEach(a => {
-          const entry = NISG_RIS[a];
-          const titleText = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : '';
-          md += `- **${a}** – ${titleText}\n`;
+          md += `- **${a}** – ${getReqTitleLine(a)}\n`;
         });
         md += '\n';
       }
       const footer = currentLang === 'en'
-        ? '_Source: Sophos NIS-2 mapping (no legal advice)._'
-        : '_Quelle: Sophos NIS-2-Mapping (keine Rechtsberatung)._';
+        ? '_Source: Sophos mapping (illustrative; no legal advice)._'
+        : '_Quelle: Sophos-Mapping (illustrativ; keine Rechtsberatung)._';
       md += footer + '\n';
       return md;
     }
@@ -1783,16 +4194,15 @@
         const solKeys = [];
         mappings.forEach(m => {
           if (!solKeys.includes(m.solution_key)) solKeys.push(m.solution_key);
-          getArticlesForMapping(m).forEach(a => {
+          getRequirementsForMapping(m).forEach(a => {
             if (!allArticles.includes(a)) allArticles.push(a);
           });
         });
-        const nis2Html = allArticles.map(formatRequirement).join('');
+        const nis2Html = allArticles.map(formatRequirementId).join('');
         const articleMappingHtml = allArticles.map(articleKey => {
-          const entry = NISG_RIS[articleKey];
-          const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : articleKey;
+          const title = getReqTitleLine(articleKey);
           const sols = mappings
-            .filter(m => getArticlesForMapping(m).includes(articleKey))
+            .filter(m => getRequirementsForMapping(m).includes(articleKey))
             .map(m => m.gse_label + ' (' + m.solution_key + ')');
           const uniqueSols = Array.from(new Set(sols));
           return '<div class="req-item"><strong>' + escapeHtml(articleKey) + '</strong> – ' +
@@ -1825,11 +4235,11 @@
             <div class="detail-value">${escapeHtml(solKeys.join(', '))}</div>
           </div>
           <div class="detail-section">
-            <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+            <div class="detail-label">${escapeHtml(getRequirementsLabel())}</div>
             <div class="nis2-list">${nis2Html}</div>
           </div>
           <div class="detail-section">
-            <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+            <div class="detail-label">${escapeHtml(getRequirementsLabel())}</div>
             <div class="nis2-list">${articleMappingHtml}</div>
           </div>
           <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
@@ -1845,6 +4255,8 @@
             mode: 'stack',
             markdown: text,
             features: mappings.map(m => m.gse_feature_id),
+            framework: currentFramework,
+            requirements: allArticles,
             nis2_articles: allArticles
           });
         };
@@ -1862,7 +4274,7 @@
           text = buildOpportunitySnippetStack(mappings);
           const allArticles = [];
           mappings.forEach(m => {
-            getArticlesForMapping(m).forEach(a => {
+            getRequirementsForMapping(m).forEach(a => {
               if (!allArticles.includes(a)) allArticles.push(a);
             });
           });
@@ -1870,15 +4282,20 @@
             mode: 'stack',
             markdown: text,
             features: mappings.map(m => m.gse_feature_id),
+            framework: currentFramework,
+            requirements: allArticles,
             nis2_articles: allArticles
           });
         } else {
           text = buildOpportunitySnippetSingle(mapping);
+          const reqs = getRequirementsForMapping(mapping);
           notifyParent('opportunity_snippet', {
             mode: 'single',
             markdown: text,
             features: [mapping.gse_feature_id],
-            nis2_articles: getArticlesForMapping(mapping)
+            framework: currentFramework,
+            requirements: reqs,
+            nis2_articles: reqs
           });
         }
         copyToClipboard(text);
@@ -1929,24 +4346,33 @@
     }
 
     function renderEmptyPanel() {
+      selectedRequirementKey = null;
       const panel = document.getElementById('detailPanel');
       const ui = UI_LANG[currentLang];
-      const buttonsHtml = ALL_NIS2_ARTICLES.map(articleKey => {
-        const entry = NISG_RIS[articleKey];
-        const preview = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : articleKey;
+      const stepEl = document.getElementById('stepBadge');
+      if (stepEl) stepEl.textContent = ui.stepBadge;
+      const ids = getChecklistIds();
+      const buttonsHtml = ids.map(reqId => {
+        const preview = getReqTitleLine(reqId);
+        const count = getGlobalMappingCountForReq(reqId, currentFramework);
+        const countHtml = checklistMode === 'all'
+          ? ` <span class="article-count">(${count})</span>`
+          : '';
         return `
-          <button type="button" class="article-btn" data-article="${escapeHtml(articleKey)}">
-            <span class="article-id">${escapeHtml(articleKey)}</span>
-            <span class="article-preview">${escapeHtml(preview)}</span>
+          <button type="button" class="article-btn" data-article="${escapeHtml(reqId)}">
+            <span class="article-id">${escapeHtml(reqId)}</span>
+            <span class="article-preview">${escapeHtml(preview)}</span>${countHtml}
           </button>`;
       }).join('');
       panel.classList.add('empty');
       panel.innerHTML = `
+        ${renderFlowHtml(1)}
         <div class="detail-section">
           <div class="detail-label">${escapeHtml(ui.filterLabel)}</div>
           <div class="article-buttons" id="articleButtons">${buttonsHtml}</div>
         </div>
         <p>${escapeHtml(ui.emptyPanel)}</p>
+        ${trustFooterHtml()}
       `;
       const container = document.getElementById('articleButtons');
       if (container) {
@@ -1961,13 +4387,16 @@
 
     function showArticleView(articleKey) {
       currentMode = 'article';
+      selectedRequirementKey = articleKey;
       const panel = document.getElementById('detailPanel');
-      const allMappings = getAllMappingsForArticles([articleKey]);
+      let allMappings = getAllMappingsForArticles([articleKey]);
+      const ARTICLE_21B_FEATURE_IDS = ['managed_services_mdr', 'managed_services_ir'];
+      if (currentFramework === 'nis2' && articleKey === 'Art. 21.2 b)') {
+        allMappings = allMappings.filter(m => ARTICLE_21B_FEATURE_IDS.includes(m.gse_feature_id));
+      }
       const ui = UI_LANG[currentLang];
       panel.classList.remove('empty');
-      const entry = NISG_RIS[articleKey];
-      const title = entry ? (currentLang === 'en' ? entry.title_en : entry.title_de) : articleKey;
-      // Wenn ein Stack existiert, nur Stack-Lösungen zeigen; sonst alle
+      const title = getReqTitleLine(articleKey);
       let mappings = allMappings;
       if (stackSelection && stackSelection.size) {
         const filtered = allMappings.filter(m => stackSelection.has(m.gse_feature_id));
@@ -1980,15 +4409,21 @@
       }).join('') || '<li>'+escapeHtml(currentLang === 'en'
         ? 'No solutions from the current stack mapped yet.'
         : 'Noch keine Lösungen aus dem aktuellen Stack zugeordnet.')+'</li>';
+      const mapCount = mappings.length;
+      const mapLine = (currentLang === 'en')
+        ? `${mapCount} mapping(s) to Sophos solutions / platform`
+        : `${mapCount} Zuordnung(en) zu Sophos-Lösungen / Plattform`;
       panel.innerHTML = `
+        ${renderFlowHtml(2)}
         <div class="detail-actions">
           <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
             <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
           </button>
         </div>
+        <p class="detail-meta">${escapeHtml(mapLine)}</p>
         <h2>${escapeHtml(articleKey)}</h2>
         <div class="detail-section">
-          <div class="detail-label">${escapeHtml(ui.nis2Label)}</div>
+          <div class="detail-label">${escapeHtml(getRequirementsLabel())}</div>
           <div class="detail-value">${escapeHtml(title)}</div>
         </div>
         <div class="detail-section">
@@ -1996,8 +4431,8 @@
           <ul id="articleSolutionList">${listItems}</ul>
         </div>
         <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
+        ${trustFooterHtml()}
       `;
-      // Hervorheben der passenden Plattform-Elemente
       document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
         const id = b.dataset.id;
         const mapping = mapById[id];
@@ -2005,8 +4440,15 @@
           b.classList.remove('active');
           return;
         }
-        const arts = mapping.nis2_articles || [];
-        b.classList.toggle('active', arts.includes(articleKey) && (!stackSelection.size || stackSelection.has(mapping.gse_feature_id)));
+        const reqs = getRequirementsForMappingFw(mapping, currentFramework);
+        let shouldBeActive = reqs.includes(articleKey);
+        if (currentFramework === 'nis2' && articleKey === 'Art. 21.2 b)') {
+          shouldBeActive = shouldBeActive && ARTICLE_21B_FEATURE_IDS.includes(mapping.gse_feature_id);
+        }
+        if (stackSelection && stackSelection.size) {
+          shouldBeActive = shouldBeActive && stackSelection.has(mapping.gse_feature_id);
+        }
+        b.classList.toggle('active', shouldBeActive);
       });
       // Navigation: Klick auf Lösung in der Artikelansicht öffnet deren Detail-View
       const listEl = document.getElementById('articleSolutionList');
@@ -2029,8 +4471,53 @@
       };
     }
 
+    (function initToolbar() {
+      document.getElementById('frameworkToggle')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-fw]');
+        if (!btn || btn.dataset.fw === currentFramework) return;
+        currentFramework = btn.dataset.fw;
+        selectedRequirementKey = null;
+        syncFrameworkToggle();
+        updateFrameworkSubtitle();
+        pushFrameworkUrl();
+        if (currentMapping) showDetail(currentMapping);
+        else renderEmptyPanel();
+      });
+      document.getElementById('checklistFilter')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-mode]');
+        if (!btn) return;
+        checklistMode = btn.dataset.mode;
+        syncChecklistFilterButtons();
+        try {
+          const u = new URL(window.location.href);
+          if (checklistMode === 'gaps') u.searchParams.set('gaps', '1');
+          else u.searchParams.delete('gaps');
+          window.history.replaceState({}, '', u.toString());
+        } catch (_) {}
+        renderEmptyPanel();
+      });
+      document.getElementById('trustSelect')?.addEventListener('change', (e) => {
+        trustMode = e.target.value;
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.set('trust', trustMode);
+          window.history.replaceState({}, '', u.toString());
+        } catch (_) {}
+      });
+    })();
+
     (function initFromUrl() {
       const params = new URLSearchParams(window.location.search);
+      const fw = params.get('framework');
+      if (fw && ['nis2', 'iso27001', 'dora'].includes(fw)) currentFramework = fw;
+      if (params.get('gaps') === '1') checklistMode = 'gaps';
+      const tr = params.get('trust');
+      if (tr === 'product' || tr === 'full') trustMode = tr;
+      syncFrameworkToggle();
+      syncChecklistFilterButtons();
+      syncTrustUi();
+      updateFrameworkSubtitle();
+
       const langParam = params.get('lang');
       if (langParam === 'en') {
         switchLanguage('en');
@@ -2041,7 +4528,7 @@
         if (mapping) {
           selectFeature(selectId, mapping);
         }
-      } else {
+      } else if (langParam !== 'en') {
         renderEmptyPanel();
       }
     })();
@@ -2050,7 +4537,11 @@
       new ResizeObserver(() => {
         notifyParent('resize', { height: document.documentElement.scrollHeight });
       }).observe(document.body);
-      notifyParent('ready', { features: MAPPINGS.map(m => m.gse_feature_id) });
+      notifyParent('ready', {
+        features: MAPPINGS.map(m => m.gse_feature_id),
+        frameworks: ['nis2', 'iso27001', 'dora'],
+        framework: currentFramework
+      });
     }
 
   </script>
