@@ -269,7 +269,8 @@
     .article-count {
       font-size: 0.68rem;
       opacity: 0.75;
-      margin-left: 0.2rem;
+      margin-left: 0;
+      white-space: nowrap;
     }
     .trust-footer-row {
       margin-top: 0.75rem;
@@ -949,7 +950,10 @@
       margin-bottom: 1rem;
     }
     .article-btn {
-      display: block;
+      display: grid;
+      grid-template-columns: minmax(6.5rem, auto) minmax(0, 1fr) auto;
+      gap: 0.5rem 0.75rem;
+      align-items: center;
       width: 100%;
       text-align: left;
       padding: 0.5rem 0.65rem;
@@ -966,13 +970,30 @@
       border-color: rgba(167,139,250,0.5);
       box-shadow: 0 0 0 1px rgba(167,139,250,0.25);
     }
+    .article-btn .article-btn-col {
+      min-width: 0;
+    }
+    .article-btn .article-btn-col-id {
+      flex-shrink: 0;
+    }
+    .article-btn .article-btn-col-count {
+      text-align: right;
+      justify-self: end;
+    }
+    .article-btn.article-btn--two-cols {
+      grid-template-columns: minmax(6.5rem, auto) minmax(0, 1fr);
+    }
+    .article-btn.article-btn--two-cols .article-btn-col-count {
+      display: none;
+    }
     .article-btn .article-id {
       display: block;
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.03em;
       color: var(--accent);
-      margin-bottom: 0.2rem;
+      margin-bottom: 0;
+      line-height: 1.25;
     }
     .article-btn .article-preview {
       font-size: 0.7rem;
@@ -4258,11 +4279,13 @@
       };
       return ids.map(reqId => {
         const preview = getReqTitleLine(reqId);
-        const countHtml = countHtmlFor(reqId);
+        const countCell = countHtmlFor(reqId).trim();
+        const twoCols = !countCell;
         return `
-          <button type="button" class="article-btn" data-article="${escapeHtml(reqId)}">
-            <span class="article-id">${escapeHtml(reqId)}</span>
-            <span class="article-preview">${escapeHtml(preview)}</span>${countHtml}
+          <button type="button" class="article-btn${twoCols ? ' article-btn--two-cols' : ''}" data-article="${escapeHtml(reqId)}">
+            <span class="article-btn-col article-btn-col-id"><span class="article-id">${escapeHtml(reqId)}</span></span>
+            <span class="article-btn-col article-btn-col-preview"><span class="article-preview">${escapeHtml(preview)}</span></span>
+            <span class="article-btn-col article-btn-col-count">${countCell}</span>
           </button>`;
       }).join('');
     }
