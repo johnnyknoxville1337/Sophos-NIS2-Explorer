@@ -97,6 +97,30 @@
     .toolbar-risk-host {
       margin-top: 0.45rem;
     }
+    .toolbar-stack-host {
+      margin-top: 0.45rem;
+    }
+    .toolbar-stack-btn {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(21,16,56,0.55);
+      color: rgba(255,255,255,0.88);
+      padding: 0.3rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .toolbar-stack-btn:hover {
+      border-color: rgba(167,139,250,0.45);
+      color: #fff;
+      background: rgba(167,139,250,0.15);
+    }
     .toolbar-risk-host[hidden] {
       display: none !important;
     }
@@ -584,6 +608,36 @@
       min-height: 0;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
+    }
+    .nis2-stack-ctx-menu {
+      position: fixed;
+      z-index: 100000;
+      min-width: 11rem;
+      padding: 0.25rem 0;
+      margin: 0;
+      background: linear-gradient(180deg, #2a1f55 0%, #1f1840 100%);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .nis2-stack-ctx-menu .nis2-stack-ctx-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.45rem 0.85rem;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.92);
+      font: inherit;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .nis2-stack-ctx-menu .nis2-stack-ctx-item:hover:not(:disabled) {
+      background: rgba(167,139,250,0.2);
+    }
+    .nis2-stack-ctx-menu .nis2-stack-ctx-item:disabled {
+      opacity: 0.35;
+      cursor: default;
     }
     .detail-panel h2 {
       margin: 0 0 0.35rem;
@@ -1352,6 +1406,9 @@
             <div class="toolbar-risk-host" id="toolbarRiskHost" hidden>
               <button type="button" class="toolbar-risk-toggle" id="btnRiskReduction" aria-expanded="false" aria-controls="toolbarRiskPanel">Risikoreduktion</button>
               <div class="toolbar-risk-panel" id="toolbarRiskPanel" role="region" aria-label="Risikoreduktion"></div>
+            </div>
+            <div class="toolbar-stack-host">
+              <button type="button" class="toolbar-stack-btn" id="btnToolbarStack" aria-label="Stack-Ansicht">Stack-Ansicht</button>
             </div>
           </div>
           <div class="toolbar-center">
@@ -3167,12 +3224,29 @@
           "secops_ndr"
         ],
         "phases": {
+          "Plan": [
+            "Überwachungsumfang definieren",
+            "Kritische Assets & Segmente priorisieren",
+            "Traffic-Quellen festlegen (SPAN / ERSPAN)",
+            "NDR-Sensor-Platzierung planen"
+          ],
           "Do": [
-            "Netzwerküberwachung implementieren"
+            "Sophos NDR Appliance deployen",
+            "Traffic-Mirroring aktivieren",
+            "Telemetrie erfassen",
+            "Analytik & ML-Modelle anwenden"
           ],
           "Check": [
-            "Netzwerkanomalien erkennen",
-            "East-West-Traffic analysieren"
+            "Netzwerkanomalien identifizieren",
+            "East-/West-Traffic analysieren",
+            "Verdächtige Aktivitäten validieren",
+            "Detections kontextualisieren"
+          ],
+          "Act": [
+            "Incident-Maßnahmen einleiten",
+            "Detection-Feedback zurückspielen",
+            "Sensor-Coverage optimieren",
+            "Sicherheitsmaßnahmen nachschärfen"
           ]
         }
       },
@@ -3525,12 +3599,29 @@
         ]
       },
       "NDR": {
+        "Plan": [
+          "Define monitoring scope",
+          "Prioritize critical assets & segments",
+          "Establish traffic sources (SPAN / ERSPAN)",
+          "Plan NDR sensor placement"
+        ],
         "Do": [
-          "Implement network monitoring"
+          "Deploy Sophos NDR appliance",
+          "Enable traffic mirroring",
+          "Collect telemetry",
+          "Apply analytics & ML models"
         ],
         "Check": [
-          "Detect network anomalies",
-          "Analyse east-west traffic"
+          "Identify network anomalies",
+          "Analyze east/west traffic",
+          "Validate suspicious activity",
+          "Contextualize detections"
+        ],
+        "Act": [
+          "Initiate incident measures",
+          "Incorporate detection feedback",
+          "Optimize sensor coverage",
+          "Tighten security measures"
         ]
       },
       "XDR": {
@@ -3696,7 +3787,8 @@
         collateralLabel: "Sophos-Mehrwert",
         exportLabel: "Für PDF/Print Browser-Druck (Ctrl/Cmd+P) verwenden.",
         btnAddToStack: "Zum Stack hinzufügen",
-        btnShowStack: "Stack anzeigen",
+        ctxStackAdd: "Hinzufügen",
+        ctxStackRemove: "Entfernen",
         btnClearStack: "Stack leeren",
         btnCopyOpp: "Text für Opportunität kopieren",
         btnPrint: "Print / PDF",
@@ -3775,7 +3867,8 @@
         collateralLabel: "Sophos value",
         exportLabel: "Use browser print (Ctrl/Cmd+P) to create a PDF.",
         btnAddToStack: "Add to stack",
-        btnShowStack: "Show stack",
+        ctxStackAdd: "Add to stack",
+        ctxStackRemove: "Remove from stack",
         btnClearStack: "Clear stack",
         btnCopyOpp: "Copy opportunity text",
         btnPrint: "Print / PDF",
@@ -3844,12 +3937,127 @@
 
     let currentLang = 'de';
     let currentMapping = null;
+    /** Letzter Tab in der Einzel-Detailansicht: overview | pdca | actions */
+    let singleDetailPreferredTab = 'overview';
     let stackSelection = new Set();
     let currentMode = 'single'; // 'single' | 'stack' | 'article'
     let selectedRequirementKey = null;
 
     const mapById = Object.fromEntries(MAPPINGS.map(m => [m.gse_feature_id, m]));
     const FEATURE_IDS_TRUST_SUPPLEMENT = new Set(['managed_services_mdr', 'managed_services_ir', 'managed_services_vuln', 'advisory_services']);
+
+    function applyDiagramStackHighlights() {
+      document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
+        const bid = b.dataset.id;
+        b.classList.toggle('active', !!(bid && stackSelection.has(bid)));
+      });
+    }
+
+    function syncStackHighlightsAndMaybeRefreshStackView() {
+      applyDiagramStackHighlights();
+      if (currentMode === 'stack' && typeof window.__nis2ShowStack === 'function') {
+        window.__nis2ShowStack();
+      }
+    }
+
+    function addToStackByFeatureId(id) {
+      if (!mapById[id]) return;
+      stackSelection.add(mapById[id].gse_feature_id);
+      syncStackHighlightsAndMaybeRefreshStackView();
+    }
+
+    function removeFromStackByFeatureId(id) {
+      if (!mapById[id]) return;
+      stackSelection.delete(mapById[id].gse_feature_id);
+      syncStackHighlightsAndMaybeRefreshStackView();
+    }
+
+    let stackCtxMenuEl = null;
+
+    function initStackCtxMenuGlobalDismiss() {
+      if (initStackCtxMenuGlobalDismiss.done) return;
+      initStackCtxMenuGlobalDismiss.done = true;
+      document.addEventListener('mousedown', (e) => {
+        if (!stackCtxMenuEl || stackCtxMenuEl.hidden) return;
+        if (stackCtxMenuEl.contains(e.target)) return;
+        closeStackCtxMenu();
+      }, true);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && stackCtxMenuEl && !stackCtxMenuEl.hidden) closeStackCtxMenu();
+      }, true);
+      window.addEventListener('scroll', () => {
+        if (stackCtxMenuEl && !stackCtxMenuEl.hidden) closeStackCtxMenu();
+      }, true);
+    }
+
+    function ensureStackCtxMenu() {
+      initStackCtxMenuGlobalDismiss();
+      if (stackCtxMenuEl) return stackCtxMenuEl;
+      const menu = document.createElement('div');
+      menu.id = 'nis2StackCtxMenu';
+      menu.className = 'nis2-stack-ctx-menu';
+      menu.setAttribute('role', 'menu');
+      menu.hidden = true;
+      menu.innerHTML =
+        '<button type="button" class="nis2-stack-ctx-item" role="menuitem" data-action="add"></button>' +
+        '<button type="button" class="nis2-stack-ctx-item" role="menuitem" data-action="remove"></button>';
+      document.body.appendChild(menu);
+      menu.querySelector('[data-action="add"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fid = menu.dataset.featureId;
+        if (fid) addToStackByFeatureId(fid);
+        closeStackCtxMenu();
+      });
+      menu.querySelector('[data-action="remove"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const fid = menu.dataset.featureId;
+        if (fid) removeFromStackByFeatureId(fid);
+        closeStackCtxMenu();
+      });
+      stackCtxMenuEl = menu;
+      return menu;
+    }
+
+    function closeStackCtxMenu() {
+      if (!stackCtxMenuEl) return;
+      stackCtxMenuEl.hidden = true;
+      stackCtxMenuEl.dataset.featureId = '';
+    }
+
+    function positionStackCtxMenu(x, y) {
+      const menu = ensureStackCtxMenu();
+      menu.hidden = false;
+      menu.style.visibility = 'hidden';
+      menu.style.left = '0px';
+      menu.style.top = '0px';
+      const rect = menu.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = x;
+      let top = y;
+      if (left + rect.width > vw - 8) left = Math.max(8, vw - rect.width - 8);
+      if (top + rect.height > vh - 8) top = Math.max(8, vh - rect.height - 8);
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+      menu.style.visibility = 'visible';
+    }
+
+    function openStackCtxMenu(clientX, clientY, featureId) {
+      const mapping = mapById[featureId];
+      if (!mapping) return false;
+      const ui = UI_LANG[currentLang];
+      const menu = ensureStackCtxMenu();
+      menu.dataset.featureId = featureId;
+      const btnAdd = menu.querySelector('[data-action="add"]');
+      const btnRem = menu.querySelector('[data-action="remove"]');
+      btnAdd.textContent = ui.ctxStackAdd;
+      btnRem.textContent = ui.ctxStackRemove;
+      const inStack = stackSelection.has(mapping.gse_feature_id);
+      btnAdd.disabled = inStack;
+      btnRem.disabled = !inStack;
+      positionStackCtxMenu(clientX, clientY);
+      return true;
+    }
 
     let currentFramework = (FRAMEWORK_REGISTRY && FRAMEWORK_REGISTRY.default_framework) || 'nis2';
     let checklistMode = 'all';
@@ -4175,8 +4383,9 @@
 
     const DETAIL_REQ_PREVIEW = 5;
 
-    function initDetailTabControls(root) {
+    function initDetailTabControls(root, options) {
       if (!root) return;
+      const onTabChange = options && typeof options.onTabChange === 'function' ? options.onTabChange : null;
       root.querySelectorAll('.detail-tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-detail-tab');
@@ -4185,6 +4394,7 @@
           root.querySelectorAll('.detail-tab-panel').forEach(p => {
             p.classList.toggle('active', p.getAttribute('data-panel') === id);
           });
+          if (onTabChange) onTabChange(id);
         });
       });
     }
@@ -4426,6 +4636,14 @@
       if (btn) btn.textContent = UI_LANG[currentLang].btnRiskReduction;
     }
 
+    function syncToolbarStackButtonLabel() {
+      const btn = document.getElementById('btnToolbarStack');
+      if (!btn) return;
+      const label = UI_LANG[currentLang].stackLabel;
+      btn.textContent = label;
+      btn.setAttribute('aria-label', label);
+    }
+
     function closeToolbarRiskPanel() {
       const panel = document.getElementById('toolbarRiskPanel');
       const btn = document.getElementById('btnRiskReduction');
@@ -4503,23 +4721,34 @@
         '<p class="detail-meta">' +
         escapeHtml(currentLang === 'en' ? 'No PDCA cycle for this item.' : 'Kein PDCA-Zyklus für dieses Element.') +
         '</p>';
+      let effectiveTab = singleDetailPreferredTab;
+      if (effectiveTab === 'pdca' && !showPdcaTab) effectiveTab = 'overview';
+
       const tabBar =
         '<div class="detail-tabs" role="tablist">' +
-        '<button type="button" role="tab" class="detail-tab-btn active" data-detail-tab="overview">' +
+        '<button type="button" role="tab" class="detail-tab-btn' +
+        (effectiveTab === 'overview' ? ' active' : '') +
+        '" data-detail-tab="overview">' +
         escapeHtml(ui.tabOverview) +
         '</button>' +
         (showPdcaTab
-          ? '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="pdca">' +
+          ? '<button type="button" role="tab" class="detail-tab-btn' +
+            (effectiveTab === 'pdca' ? ' active' : '') +
+            '" data-detail-tab="pdca">' +
             escapeHtml(ui.tabPdcaRisk) +
             '</button>'
           : '') +
-        '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="actions">' +
+        '<button type="button" role="tab" class="detail-tab-btn' +
+        (effectiveTab === 'actions' ? ' active' : '') +
+        '" data-detail-tab="actions">' +
         escapeHtml(ui.tabActions) +
         '</button>' +
         '</div>';
 
       const overviewPanel =
-        '<div class="detail-tab-panel active" data-panel="overview">' +
+        '<div class="detail-tab-panel' +
+        (effectiveTab === 'overview' ? ' active' : '') +
+        '" data-panel="overview">' +
         '<div class="detail-section">' +
         '<div class="detail-label">' +
         escapeHtml(ui.solutionLabel) +
@@ -4535,13 +4764,17 @@
         '</div></div>';
 
       const pdcaTabPanel = showPdcaTab
-        ? '<div class="detail-tab-panel" data-panel="pdca">' +
+        ? '<div class="detail-tab-panel' +
+          (effectiveTab === 'pdca' ? ' active' : '') +
+          '" data-panel="pdca">' +
           (pdcaHtml || noPdcaMsg) +
           '</div>'
         : '';
 
       const actionsPanel =
-        '<div class="detail-tab-panel" data-panel="actions">' +
+        '<div class="detail-tab-panel' +
+        (effectiveTab === 'actions' ? ' active' : '') +
+        '" data-panel="actions">' +
         '<div class="detail-actions">' +
         '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
         '<span class="icon">⬅</span>' +
@@ -4550,10 +4783,6 @@
         '<button type="button" onclick="window.__nis2AddToStack && window.__nis2AddToStack()">' +
         '<span class="icon">✚</span>' +
         escapeHtml(ui.btnAddToStack) +
-        '</button>' +
-        '<button type="button" class="secondary" onclick="window.__nis2ShowStack && window.__nis2ShowStack()">' +
-        '<span class="icon">☰</span>' +
-        escapeHtml(ui.btnShowStack) +
         '</button>' +
         '<button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp()">' +
         '<span class="icon">✎</span>' +
@@ -4591,7 +4820,13 @@
         trustFooterHtml() +
         '</div>';
 
-      initDetailTabControls(panel);
+      initDetailTabControls(panel, {
+        onTabChange(id) {
+          if (id === 'overview' || id === 'pdca' || id === 'actions') {
+            singleDetailPreferredTab = id;
+          }
+        }
+      });
       attachPanelHandlers(mapping);
       mountRiskCalculatorToolbar(mapping);
     }
@@ -4666,6 +4901,7 @@
       currentMode = 'single';
       currentMapping = null;
       selectedRequirementKey = null;
+      singleDetailPreferredTab = 'overview';
       document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
       renderEmptyPanel();
     }
@@ -4688,6 +4924,9 @@
     }
 
     document.querySelector('.diagram').addEventListener('click', (e) => {
+      // Kopfzeile liegt innerhalb von .diagram; Klicks auf Toolbar/Framework/Sprache
+      // dürfen nicht als „Diagramm-Hintergrund“ gelten (sonst goToMainView + Hervorhebung weg).
+      if (e.target.closest('.platform-header')) return;
       const el = e.target.closest('.box, .datalake-btn, .layer-footer-line');
       if (!el) {
         goToMainView();
@@ -4700,6 +4939,16 @@
       }
     });
 
+    document.querySelector('.diagram').addEventListener('contextmenu', (e) => {
+      const el = e.target.closest('.box, .datalake-btn, .layer-footer-line');
+      if (!el) return;
+      const id = el.dataset.id;
+      if (!id || !mapById[id]) return;
+      e.preventDefault();
+      closeStackCtxMenu();
+      openStackCtxMenu(e.clientX, e.clientY, id);
+    });
+
     function switchLanguage(lang) {
       currentLang = lang;
       document.documentElement.lang = lang;
@@ -4707,6 +4956,7 @@
         b.classList.toggle('active', b.dataset.lang === lang);
       });
       updateFrameworkSubtitle();
+      syncToolbarStackButtonLabel();
       const stepEl = document.getElementById('stepBadge');
       if (stepEl) stepEl.textContent = UI_LANG[currentLang].stepBadge;
       if (currentMapping) {
@@ -4832,166 +5082,166 @@
       return md;
     }
 
-    function attachPanelHandlers(mapping) {
-      window.__nis2AddToStack = function() {
-        if (!mapping) return;
-        stackSelection.add(mapping.gse_feature_id);
-      };
-      window.__nis2ShowStack = function() {
-        if (!stackSelection.size) {
-          const panel = document.getElementById('detailPanel');
-          const ui = UI_LANG[currentLang];
-          panel.classList.remove('empty');
-          panel.innerHTML =
-            '<div class="detail-panel-head">' +
-            '<h2>' +
-            escapeHtml(ui.stackLabel) +
-            '</h2>' +
-            '<div class="detail-actions">' +
-            '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
-            '<span class="icon">⬅</span>' +
-            escapeHtml(ui.btnHome) +
-            '</button></div>' +
-            '<p class="detail-meta">' +
-            escapeHtml(ui.stackHint) +
-            '</p></div>' +
-            '<div class="detail-panel-body"><div class="detail-scroll-region">' +
-            '<p>' +
-            escapeHtml(ui.stackEmpty) +
-            '</p></div></div>' +
-            '<div class="detail-panel-foot"><p class="subtitle">' +
-            escapeHtml(ui.disclaimer) +
-            '</p></div>';
-          currentMode = 'stack';
-          document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
-          mountRiskCalculatorToolbar(null);
-          return;
-        }
-        currentMode = 'stack';
-        const mappings = Array.from(stackSelection).map(id => mapById[id]).filter(Boolean);
+    function showStackView() {
+      if (!stackSelection.size) {
         const panel = document.getElementById('detailPanel');
         const ui = UI_LANG[currentLang];
-        const allArticles = [];
-        const solKeys = [];
-        mappings.forEach(m => {
-          if (!solKeys.includes(m.solution_key)) solKeys.push(m.solution_key);
-          getRequirementsForMapping(m).forEach(a => {
-            if (!allArticles.includes(a)) allArticles.push(a);
-          });
-        });
-        const nis2Html = renderCollapsibleRequirements(allArticles);
-        const articleMappingHtml = allArticles.map(articleKey => {
-          const title = getReqTitleLine(articleKey);
-          const sols = mappings
-            .filter(m => getRequirementsForMapping(m).includes(articleKey))
-            .map(m => m.gse_label + ' (' + m.solution_key + ')');
-          const uniqueSols = Array.from(new Set(sols));
-          return '<div class="req-item"><strong>' + escapeHtml(articleKey) + '</strong> – ' +
-            escapeHtml(title) +
-            (uniqueSols.length
-              ? '<div class="detail-meta"><strong>' + escapeHtml(ui.solutionLabel) + ':</strong> ' +
-                escapeHtml(uniqueSols.join(', ')) + '</div>'
-              : '') +
-            '</div>';
-        }).join('');
-        const stackTabBar =
-          '<div class="detail-tabs" role="tablist">' +
-          '<button type="button" role="tab" class="detail-tab-btn active" data-detail-tab="overview">' +
-          escapeHtml(ui.tabOverview) +
-          '</button>' +
-          '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="stackmap">' +
-          escapeHtml(ui.tabStackMap) +
-          '</button>' +
-          '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="actions">' +
-          escapeHtml(ui.tabActions) +
-          '</button>' +
-          '</div>';
-        const stackOverviewPanel =
-          '<div class="detail-tab-panel active" data-panel="overview">' +
-          '<div class="detail-section">' +
-          '<div class="detail-label">' +
-          escapeHtml(ui.solutionLabel) +
-          '</div>' +
-          '<div class="detail-value">' +
-          escapeHtml(solKeys.join(', ')) +
-          '</div></div>' +
-          '<div class="detail-section">' +
-          '<div class="detail-label">' +
-          escapeHtml(getRequirementsLabel()) +
-          '</div>' +
-          nis2Html +
-          '</div></div>';
-        const stackMapPanel =
-          '<div class="detail-tab-panel" data-panel="stackmap">' +
-          '<div class="detail-section">' +
-          '<div class="detail-label">' +
-          escapeHtml(getRequirementsLabel()) +
-          '</div>' +
-          '<div class="nis2-list">' +
-          articleMappingHtml +
-          '</div></div></div>';
-        const stackActionsPanel =
-          '<div class="detail-tab-panel" data-panel="actions">' +
-          '<div class="detail-actions">' +
-          '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
-          '<span class="icon">⬅</span>' +
-          escapeHtml(ui.btnHome) +
-          '</button>' +
-          '<button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp(\'stack\')">' +
-          '<span class="icon">✎</span>' +
-          escapeHtml(ui.btnCopyOpp) +
-          '</button>' +
-          '<button type="button" class="secondary" onclick="window.__nis2ClearStack && window.__nis2ClearStack()">' +
-          '<span class="icon">✕</span>' +
-          escapeHtml(ui.btnClearStack) +
-          '</button>' +
-          '<button type="button" class="secondary" onclick="window.print()">' +
-          '<span class="icon">🖨</span>' +
-          escapeHtml(ui.btnPrint) +
-          '</button></div>' +
-          buildCollateralShort() +
-          '</div>';
         panel.classList.remove('empty');
         panel.innerHTML =
           '<div class="detail-panel-head">' +
           '<h2>' +
           escapeHtml(ui.stackLabel) +
           '</h2>' +
-          stackTabBar +
-          '</div>' +
-          '<div class="detail-panel-body">' +
-          '<div class="detail-tab-panels">' +
-          stackOverviewPanel +
-          stackMapPanel +
-          stackActionsPanel +
-          '</div></div>' +
+          '<div class="detail-actions">' +
+          '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
+          '<span class="icon">⬅</span>' +
+          escapeHtml(ui.btnHome) +
+          '</button></div>' +
+          '<p class="detail-meta">' +
+          escapeHtml(ui.stackHint) +
+          '</p></div>' +
+          '<div class="detail-panel-body"><div class="detail-scroll-region">' +
+          '<p>' +
+          escapeHtml(ui.stackEmpty) +
+          '</p></div></div>' +
           '<div class="detail-panel-foot"><p class="subtitle">' +
           escapeHtml(ui.disclaimer) +
           '</p></div>';
-        initDetailTabControls(panel);
+        currentMode = 'stack';
+        applyDiagramStackHighlights();
         mountRiskCalculatorToolbar(null);
-        document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
-          const id = b.dataset.id;
-          b.classList.toggle('active', stackSelection.has(id));
+        return;
+      }
+      currentMode = 'stack';
+      const mappings = Array.from(stackSelection).map(id => mapById[id]).filter(Boolean);
+      const panel = document.getElementById('detailPanel');
+      const ui = UI_LANG[currentLang];
+      const allArticles = [];
+      const solKeys = [];
+      mappings.forEach(m => {
+        if (!solKeys.includes(m.solution_key)) solKeys.push(m.solution_key);
+        getRequirementsForMapping(m).forEach(a => {
+          if (!allArticles.includes(a)) allArticles.push(a);
         });
-        window.__nis2CopyOpp = function(mode) {
-          const text = buildOpportunitySnippetStack(mappings);
-          copyToClipboard(text);
-          notifyParent('opportunity_snippet', {
-            mode: 'stack',
-            markdown: text,
-            features: mappings.map(m => m.gse_feature_id),
-            framework: currentFramework,
-            requirements: allArticles,
-            nis2_articles: allArticles
-          });
-        };
-        window.__nis2ClearStack = function() {
-          stackSelection.clear();
-          currentMode = 'single';
-          document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
-          renderEmptyPanel();
-        };
+      });
+      const nis2Html = renderCollapsibleRequirements(allArticles);
+      const articleMappingHtml = allArticles.map(articleKey => {
+        const title = getReqTitleLine(articleKey);
+        const sols = mappings
+          .filter(m => getRequirementsForMapping(m).includes(articleKey))
+          .map(m => m.gse_label + ' (' + m.solution_key + ')');
+        const uniqueSols = Array.from(new Set(sols));
+        return '<div class="req-item"><strong>' + escapeHtml(articleKey) + '</strong> – ' +
+          escapeHtml(title) +
+          (uniqueSols.length
+            ? '<div class="detail-meta"><strong>' + escapeHtml(ui.solutionLabel) + ':</strong> ' +
+              escapeHtml(uniqueSols.join(', ')) + '</div>'
+            : '') +
+          '</div>';
+      }).join('');
+      const stackTabBar =
+        '<div class="detail-tabs" role="tablist">' +
+        '<button type="button" role="tab" class="detail-tab-btn active" data-detail-tab="overview">' +
+        escapeHtml(ui.tabOverview) +
+        '</button>' +
+        '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="stackmap">' +
+        escapeHtml(ui.tabStackMap) +
+        '</button>' +
+        '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="actions">' +
+        escapeHtml(ui.tabActions) +
+        '</button>' +
+        '</div>';
+      const stackOverviewPanel =
+        '<div class="detail-tab-panel active" data-panel="overview">' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(ui.solutionLabel) +
+        '</div>' +
+        '<div class="detail-value">' +
+        escapeHtml(solKeys.join(', ')) +
+        '</div></div>' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(getRequirementsLabel()) +
+        '</div>' +
+        nis2Html +
+        '</div></div>';
+      const stackMapPanel =
+        '<div class="detail-tab-panel" data-panel="stackmap">' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(getRequirementsLabel()) +
+        '</div>' +
+        '<div class="nis2-list">' +
+        articleMappingHtml +
+        '</div></div></div>';
+      const stackActionsPanel =
+        '<div class="detail-tab-panel" data-panel="actions">' +
+        '<div class="detail-actions">' +
+        '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
+        '<span class="icon">⬅</span>' +
+        escapeHtml(ui.btnHome) +
+        '</button>' +
+        '<button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp(\'stack\')">' +
+        '<span class="icon">✎</span>' +
+        escapeHtml(ui.btnCopyOpp) +
+        '</button>' +
+        '<button type="button" class="secondary" onclick="window.__nis2ClearStack && window.__nis2ClearStack()">' +
+        '<span class="icon">✕</span>' +
+        escapeHtml(ui.btnClearStack) +
+        '</button>' +
+        '<button type="button" class="secondary" onclick="window.print()">' +
+        '<span class="icon">🖨</span>' +
+        escapeHtml(ui.btnPrint) +
+        '</button></div>' +
+        buildCollateralShort() +
+        '</div>';
+      panel.classList.remove('empty');
+      panel.innerHTML =
+        '<div class="detail-panel-head">' +
+        '<h2>' +
+        escapeHtml(ui.stackLabel) +
+        '</h2>' +
+        stackTabBar +
+        '</div>' +
+        '<div class="detail-panel-body">' +
+        '<div class="detail-tab-panels">' +
+        stackOverviewPanel +
+        stackMapPanel +
+        stackActionsPanel +
+        '</div></div>' +
+        '<div class="detail-panel-foot"><p class="subtitle">' +
+        escapeHtml(ui.disclaimer) +
+        '</p></div>';
+      initDetailTabControls(panel);
+      mountRiskCalculatorToolbar(null);
+      applyDiagramStackHighlights();
+      window.__nis2CopyOpp = function(mode) {
+        const text = buildOpportunitySnippetStack(mappings);
+        copyToClipboard(text);
+        notifyParent('opportunity_snippet', {
+          mode: 'stack',
+          markdown: text,
+          features: mappings.map(m => m.gse_feature_id),
+          framework: currentFramework,
+          requirements: allArticles,
+          nis2_articles: allArticles
+        });
+      };
+      window.__nis2ClearStack = function() {
+        stackSelection.clear();
+        currentMode = 'single';
+        document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+        renderEmptyPanel();
+      };
+    }
+
+    window.__nis2ShowStack = showStackView;
+
+    function attachPanelHandlers(mapping) {
+      window.__nis2AddToStack = function() {
+        if (!mapping) return;
+        addToStackByFeatureId(mapping.gse_feature_id);
       };
       window.__nis2CopyOpp = function(mode) {
         let text;
@@ -5258,6 +5508,16 @@
     })();
 
     initToolbarRiskControls();
+
+    (function initToolbarStackButton() {
+      const btn = document.getElementById('btnToolbarStack');
+      if (!btn || btn.dataset.stackBound === '1') return;
+      btn.dataset.stackBound = '1';
+      btn.addEventListener('click', function () {
+        if (typeof showStackView === 'function') showStackView();
+      });
+      syncToolbarStackButtonLabel();
+    })();
 
     (function initDetailPanelChecklistDelegation() {
       const dp = document.getElementById('detailPanel');
