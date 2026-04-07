@@ -8,7 +8,6 @@
     ?framework=nis2|iso27001|dora   Aktives Framework (Standard: nis2)
     ?select=<id>          Element beim Laden vorauswählen (z.B. managed_services_mdr)
     ?gaps=1               Kontrollliste „Lücken“ (Prüfscope + qualifizierte Abdeckung)
-    ?trust=full|product   Vermögenswerte-Ansicht
 
   Kombinierbar: ?embed=1&lang=en&framework=iso27001&select=data_controls_firewall
 
@@ -199,22 +198,6 @@
       flex-direction: column;
       align-items: flex-end;
       gap: 0.4rem;
-    }
-    .trust-select-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.75);
-    }
-    .trust-select-wrap select {
-      background: rgba(255,255,255,0.08);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 4px;
-      padding: 0.25rem 0.4rem;
-      font-size: 0.68rem;
-      max-width: 200px;
     }
     .framework-toggle {
       display: flex;
@@ -1377,13 +1360,6 @@
             <p class="framework-subtitle" id="frameworkSubtitle"></p>
           </div>
           <div class="toolbar-right">
-            <div class="trust-select-wrap">
-              <label for="trustSelect" id="trustSelectLabel">Vermögenswerte</label>
-              <select id="trustSelect" aria-labelledby="trustSelectLabel">
-                <option value="full">Voller Stack (Trust)</option>
-                <option value="product">Produkt-Fokus</option>
-              </select>
-            </div>
             <div class="framework-toggle" id="frameworkToggle" role="tablist" aria-label="Framework">
               <button type="button" role="tab" data-fw="nis2" class="active">NIS2</button>
               <button type="button" role="tab" data-fw="iso27001">ISO 27001</button>
@@ -3752,9 +3728,6 @@
         flowStep1: "Kontrollpunkt",
         flowStep2: "Plattform",
         flowStep3: "Abdeckung",
-        trustLabel: "Aktuelle Vermögenswerte",
-        trustFull: "Voller Stack (Trust)",
-        trustProduct: "Produkt-Fokus",
         checklistAll: "Alle",
         checklistRelevant: "Nur zutreffende",
         checklistGaps: "Lücken",
@@ -3834,9 +3807,6 @@
         flowStep1: "Control",
         flowStep2: "Platform",
         flowStep3: "Coverage",
-        trustLabel: "Current assets",
-        trustFull: "Full stack (trust)",
-        trustProduct: "Product focus",
         checklistAll: "All",
         checklistRelevant: "Relevant only",
         checklistGaps: "Gaps",
@@ -3883,7 +3853,6 @@
 
     let currentFramework = (FRAMEWORK_REGISTRY && FRAMEWORK_REGISTRY.default_framework) || 'nis2';
     let checklistMode = 'all';
-    let trustMode = 'full';
 
     function getReqFieldName(fw) {
       if (fw === 'nis2') return 'nis2_articles';
@@ -4289,20 +4258,6 @@
       document.querySelectorAll('#checklistFilter button').forEach(b => {
         b.classList.toggle('active', b.dataset.mode === checklistMode);
       });
-    }
-
-    function syncTrustUi() {
-      const sel = document.getElementById('trustSelect');
-      if (sel) sel.value = trustMode;
-      const lab = document.getElementById('trustSelectLabel');
-      if (lab) {
-        const ui = UI_LANG[currentLang];
-        lab.textContent = ui.trustLabel;
-      }
-      if (sel) {
-        sel.querySelector('option[value="full"]').textContent = UI_LANG[currentLang].trustFull;
-        sel.querySelector('option[value="product"]').textContent = UI_LANG[currentLang].trustProduct;
-      }
     }
 
     function pushFrameworkUrl() {
@@ -4752,7 +4707,6 @@
         b.classList.toggle('active', b.dataset.lang === lang);
       });
       updateFrameworkSubtitle();
-      syncTrustUi();
       const stepEl = document.getElementById('stepBadge');
       if (stepEl) stepEl.textContent = UI_LANG[currentLang].stepBadge;
       if (currentMapping) {
@@ -5301,14 +5255,6 @@
         } catch (_) {}
         renderEmptyPanel();
       });
-      document.getElementById('trustSelect')?.addEventListener('change', (e) => {
-        trustMode = e.target.value;
-        try {
-          const u = new URL(window.location.href);
-          u.searchParams.set('trust', trustMode);
-          window.history.replaceState({}, '', u.toString());
-        } catch (_) {}
-      });
     })();
 
     initToolbarRiskControls();
@@ -5341,11 +5287,8 @@
       const fw = params.get('framework');
       if (fw && ['nis2', 'iso27001', 'dora'].includes(fw)) currentFramework = fw;
       if (params.get('gaps') === '1') checklistMode = 'gaps';
-      const tr = params.get('trust');
-      if (tr === 'product' || tr === 'full') trustMode = tr;
       syncFrameworkToggle();
       syncChecklistFilterButtons();
-      syncTrustUi();
       updateFrameworkSubtitle();
 
       const langParam = params.get('lang');
