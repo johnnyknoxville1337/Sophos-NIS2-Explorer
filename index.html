@@ -90,9 +90,69 @@
       padding: 0 0.5rem;
     }
     .toolbar-left {
+      position: relative;
       text-align: left;
       font-size: 0.72rem;
       color: rgba(255,255,255,0.85);
+    }
+    .toolbar-risk-host {
+      margin-top: 0.45rem;
+    }
+    .toolbar-risk-host[hidden] {
+      display: none !important;
+    }
+    .toolbar-risk-toggle {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(21,16,56,0.55);
+      color: rgba(255,255,255,0.88);
+      padding: 0.3rem 0.55rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .toolbar-risk-toggle:hover {
+      border-color: rgba(167,139,250,0.45);
+      color: #fff;
+      background: rgba(167,139,250,0.15);
+    }
+    .toolbar-risk-panel {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 100%;
+      margin-top: 0.35rem;
+      z-index: 200;
+      width: min(380px, calc(100vw - 2rem));
+      max-height: min(520px, 72vh);
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.65rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, #1a1242 0%, #151035 100%);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+    .toolbar-risk-panel.is-open {
+      display: block;
+    }
+    .toolbar-risk-panel .detail-section {
+      margin-bottom: 0;
+    }
+    .toolbar-risk-panel .risk-calc-nis2-hint {
+      margin-left: 0;
+      margin-top: 0.35rem;
+    }
+    html.embed-mode .toolbar-risk-panel {
+      width: min(320px, calc(100vw - 1.5rem));
+      max-height: min(480px, 65vh);
     }
     .step-badge {
       display: block;
@@ -483,29 +543,157 @@
       max-width: 600px;
       border-left: 1px solid rgba(255,255,255,0.08);
       background: linear-gradient(180deg, #1a1242 0%, #151035 100%);
-      padding: 1.5rem;
-      overflow-y: auto;
+      padding: 0.85rem 1rem 0.75rem;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
     }
     .detail-panel.empty {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
       color: rgba(255,255,255,0.55);
       font-size: 0.875rem;
       text-align: center;
-      padding: 2.5rem;
+      padding: 0.85rem 1rem 0.75rem;
       line-height: 1.6;
     }
+    .detail-panel.empty > .detail-empty-intro {
+      flex-shrink: 0;
+      margin-bottom: 0.5rem;
+    }
+    .detail-panel.empty .detail-panel-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-tab-panel h2.detail-article-heading {
+      margin: 0.35rem 0;
+      font-size: 0.95rem;
+      padding-bottom: 0.3rem;
+    }
+    .detail-panel:not(.empty) {
+      align-items: stretch;
+    }
+    .detail-panel-head {
+      flex-shrink: 0;
+    }
+    .detail-panel-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-panel-foot {
+      flex-shrink: 0;
+      margin-top: 0.5rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .detail-scroll-region {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     .detail-panel h2 {
-      margin: 0 0 1rem;
-      font-size: 1.08rem;
+      margin: 0 0 0.35rem;
+      font-size: 0.98rem;
       font-weight: 600;
       color: var(--accent);
       text-transform: uppercase;
       letter-spacing: 0.03em;
-      padding-bottom: 0.5rem;
+      padding-bottom: 0.35rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .detail-panel .explorer-flow {
+      font-size: 0.62rem;
+      margin-bottom: 0.35rem;
+      gap: 0.25rem;
+    }
+    .detail-panel .explorer-flow .flow-step {
+      padding: 0.2rem 0.4rem;
+    }
+    .detail-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin: 0.25rem 0 0.5rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .detail-tab-btn {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(21,16,56,0.75);
+      color: rgba(255,255,255,0.65);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.28rem 0.55rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .detail-tab-btn:hover {
+      color: rgba(255,255,255,0.9);
+      border-color: rgba(167,139,250,0.45);
+    }
+    .detail-tab-btn.active {
+      background: rgba(167,139,250,0.22);
+      border-color: rgba(167,139,250,0.55);
+      color: #fff;
+    }
+    .detail-tab-panels {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-tab-panel {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 0.15rem;
+    }
+    .detail-tab-panel.active {
+      display: block;
+    }
+    .collateral-short .detail-value {
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+    .detail-req-details {
+      margin-top: 0.35rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(0,0,0,0.12);
+      padding: 0.35rem 0.5rem;
+    }
+    .detail-req-details summary {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(167,139,250,0.95);
+      cursor: pointer;
+      list-style: none;
+    }
+    .detail-req-details summary::-webkit-details-marker { display: none; }
+    .detail-req-details .nis2-list-continuation {
+      margin-top: 0.45rem;
+      padding-top: 0.35rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
     .detail-section { margin-bottom: 1.25rem; }
     .detail-section:last-child { margin-bottom: 0; }
@@ -528,22 +716,32 @@
       padding-bottom: 0.65rem;
       border-bottom: 1px solid rgba(255,255,255,0.06);
     }
+    .detail-tab-panel .req-item {
+      margin-bottom: 0.42rem;
+      padding-bottom: 0.32rem;
+    }
+    .detail-tab-panel .detail-section {
+      margin-bottom: 0.6rem;
+    }
+    .detail-tab-panel .detail-section:last-child {
+      margin-bottom: 0;
+    }
     .req-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .req-item strong { font-weight: 600; color: rgba(255,255,255,0.95); }
     .detail-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.35rem;
-      margin: 0.35rem 0 0.9rem;
+      gap: 0.28rem;
+      margin: 0.15rem 0 0.5rem;
     }
     .detail-actions button {
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(21,16,56,0.9);
       color: rgba(255,255,255,0.9);
-      font-size: 0.72rem;
+      font-size: 0.66rem;
       font-weight: 500;
-      padding: 0.32rem 0.7rem;
+      padding: 0.26rem 0.55rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -600,6 +798,111 @@
     .detail-filter-row select:focus {
       border-color: rgba(167,139,250,0.9);
       box-shadow: 0 0 0 1px rgba(167,139,250,0.5);
+    }
+    /* Kontrollliste: gruppiert + Pills */
+    .checklist-panel-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 0;
+      flex: 1;
+    }
+    .detail-scroll-region .checklist-panel-stack {
+      min-height: 0;
+    }
+    .checklist-cat-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .checklist-cat-pill {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(21,16,56,0.55);
+      color: rgba(255,255,255,0.75);
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      padding: 0.22rem 0.5rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .checklist-cat-pill:hover {
+      color: #fff;
+      border-color: rgba(167,139,250,0.5);
+      background: rgba(167,139,250,0.12);
+    }
+    .checklist-cat-pill:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .checklist-cat-body {
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      padding-right: 0.15rem;
+      scrollbar-gutter: stable;
+    }
+    .checklist-cat-details {
+      scroll-margin-top: 0.35rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.12);
+      margin-bottom: 0.45rem;
+    }
+    .checklist-cat-details:last-child {
+      margin-bottom: 0;
+    }
+    .checklist-cat-summary {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgba(167,139,250,0.95);
+      padding: 0.45rem 0.55rem;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      border-radius: 8px 8px 0 0;
+    }
+    .checklist-cat-summary::-webkit-details-marker {
+      display: none;
+    }
+    .checklist-cat-summary::after {
+      content: '';
+      width: 0.45rem;
+      height: 0.45rem;
+      border-right: 2px solid rgba(255,255,255,0.35);
+      border-bottom: 2px solid rgba(255,255,255,0.35);
+      transform: rotate(45deg);
+      flex-shrink: 0;
+      margin-left: auto;
+      transition: transform 0.2s;
+    }
+    .checklist-cat-details[open] .checklist-cat-summary::after {
+      transform: rotate(-135deg);
+      margin-top: 0.2rem;
+    }
+    .checklist-cat-summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    .checklist-cat-count {
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.02em;
+    }
+    .checklist-cat-details .article-buttons {
+      margin: 0 0.5rem 0.5rem;
+      padding-top: 0.15rem;
     }
     /* NIS2-Artikel-Buttons (Umkehransicht) */
     .article-buttons {
@@ -659,6 +962,14 @@
     .article-solution-btn:hover {
       background: rgba(255,255,255,0.06);
     }
+    #articleSolutionList {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #articleSolutionList li {
+      margin-bottom: 0.28rem;
+    }
     /* PDCA Cycle – visual quadrant layout */
     .pdca-cycle {
       position: relative;
@@ -668,11 +979,11 @@
       margin-top: 0.4rem;
     }
     .pdca-quadrant {
-      padding: 0.55rem 0.6rem;
+      padding: 0.45rem 0.5rem;
       display: flex;
       flex-direction: column;
-      gap: 0.3rem;
-      min-height: 90px;
+      gap: 0.25rem;
+      min-height: 64px;
       position: relative;
       overflow: hidden;
     }
@@ -705,7 +1016,7 @@
       border-top-color: transparent;
     }
     .pdca-phase-label {
-      font-size: 0.82rem;
+      font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -774,8 +1085,8 @@
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(167,139,250,0.2);
       border-radius: 10px;
-      padding: 0.9rem 1rem;
-      margin-top: 0.5rem;
+      padding: 0.55rem 0.65rem;
+      margin-top: 0.25rem;
     }
     .risk-calc-intro {
       font-size: 0.78rem;
@@ -983,6 +1294,7 @@
         background: #ffffff;
         color: #000000;
         box-shadow: none;
+        overflow: visible !important;
       }
       .detail-panel h2 {
         color: #000000;
@@ -993,6 +1305,18 @@
       }
       .detail-actions button {
         display: none !important;
+      }
+      .detail-tabs {
+        display: none !important;
+      }
+      .detail-tab-panel {
+        display: block !important;
+        overflow: visible !important;
+        page-break-inside: avoid;
+      }
+      .detail-tab-panels,
+      .detail-panel-body {
+        overflow: visible !important;
       }
       .risk-calc-row input[type="range"] {
         display: none !important;
@@ -1041,6 +1365,10 @@
               <button type="button" data-mode="all" class="active">Alle</button>
               <button type="button" data-mode="relevant">Nur zutreffende</button>
               <button type="button" data-mode="gaps" id="btnGaps" title="Nur Lücken (Prüfscope)">Lücken</button>
+            </div>
+            <div class="toolbar-risk-host" id="toolbarRiskHost" hidden>
+              <button type="button" class="toolbar-risk-toggle" id="btnRiskReduction" aria-expanded="false" aria-controls="toolbarRiskPanel">Risikoreduktion</button>
+              <div class="toolbar-risk-panel" id="toolbarRiskPanel" role="region" aria-label="Risikoreduktion"></div>
             </div>
           </div>
           <div class="toolbar-center">
@@ -3434,8 +3762,31 @@
         reqsLabelIso: "ISO/IEC 27001:2022 – Anhang A (Kontrollen)",
         reqsLabelDora: "DORA – Artikel",
         mappingCountLine: "Zuordnung(en) zu Sophos-Lösungen / Plattform",
+        checklistCatNavLabel: "Kategorien (Sprungmarke)",
+        categoryIsoOrganizational: "A.5 Organisatorisch",
+        categoryIsoPeople: "A.6 Personen",
+        categoryIsoPhysical: "A.7 Physisch",
+        categoryIsoTechnological: "A.8 Technologisch",
+        categoryNis2Art20: "Art. 20",
+        categoryNis2Art212: "Art. 21.2 (a–j)",
+        categoryNis2Art23: "Art. 23",
+        categoryDora1_4: "Art. 1–4",
+        categoryDora5_9: "Art. 5–9",
+        categoryDora10_14: "Art. 10–14",
+        categoryDora15_19: "Art. 15–19",
+        categoryDora20_24: "Art. 20–24",
+        categoryDora25_29: "Art. 25–29",
+        categoryDora30_plus: "Art. 30+",
+        categoryOther: "Sonstige",
         trustFooter: "Illustrative Zuordnung; verbindliche Texte in den Primärquellen. ",
-        trustCenterLink: "Sophos Trust Center"
+        trustCenterLink: "Sophos Trust Center",
+        tabOverview: "Überblick",
+        tabPdcaRisk: "PDCA",
+        tabActions: "Aktionen",
+        btnRiskReduction: "Risikoreduktion",
+        tabStackMap: "Zuordnung je Anforderung",
+        tabArticleReq: "Anforderung",
+        tabArticleMap: "Sophos-Zuordnungen"
       },
       en: {
         emptyPanel: "Pick a requirement in the checklist or click a platform area to see mappings.",
@@ -3493,8 +3844,31 @@
         reqsLabelIso: "ISO/IEC 27001:2022 – Annex A (controls)",
         reqsLabelDora: "DORA – Articles",
         mappingCountLine: "Mapping(s) to Sophos solutions / platform",
+        checklistCatNavLabel: "Categories (jump)",
+        categoryIsoOrganizational: "A.5 Organisational",
+        categoryIsoPeople: "A.6 People",
+        categoryIsoPhysical: "A.7 Physical",
+        categoryIsoTechnological: "A.8 Technological",
+        categoryNis2Art20: "Art. 20",
+        categoryNis2Art212: "Art. 21.2 (a–j)",
+        categoryNis2Art23: "Art. 23",
+        categoryDora1_4: "Arts 1–4",
+        categoryDora5_9: "Arts 5–9",
+        categoryDora10_14: "Arts 10–14",
+        categoryDora15_19: "Arts 15–19",
+        categoryDora20_24: "Arts 20–24",
+        categoryDora25_29: "Arts 25–29",
+        categoryDora30_plus: "Arts 30+",
+        categoryOther: "Other",
         trustFooter: "Illustrative mapping; authoritative wording in primary sources. ",
-        trustCenterLink: "Sophos Trust Center"
+        trustCenterLink: "Sophos Trust Center",
+        tabOverview: "Overview",
+        tabPdcaRisk: "PDCA",
+        tabActions: "Actions",
+        btnRiskReduction: "Risk reduction",
+        tabStackMap: "Per-requirement map",
+        tabArticleReq: "Requirement",
+        tabArticleMap: "Sophos mappings"
       }
     };
 
@@ -3592,6 +3966,187 @@
       return MAPPINGS.filter(m => getRequirementsForMappingFw(m, fw).includes(reqId)).length;
     }
 
+    function parseDoraArticleNumber(reqId) {
+      const m = /^Art\.\s*(\d+)/i.exec(String(reqId || '').trim());
+      return m ? parseInt(m[1], 10) : 0;
+    }
+
+    function getRequirementCategoryKey(reqId, fw) {
+      if (fw === 'iso27001') {
+        const e = ISO27001_META[reqId];
+        const th = e && e.theme ? String(e.theme) : '';
+        if (th === 'organizational') return 'iso_organizational';
+        if (th === 'people') return 'iso_people';
+        if (th === 'physical') return 'iso_physical';
+        if (th === 'technological') return 'iso_technological';
+        return 'iso_other';
+      }
+      if (fw === 'nis2') {
+        const s = String(reqId);
+        if (s === 'Art. 20') return 'nis2_art20';
+        if (s.indexOf('Art. 21.2') === 0) return 'nis2_art212';
+        if (s === 'Art. 23') return 'nis2_art23';
+        return 'nis2_other';
+      }
+      if (fw === 'dora') {
+        const n = parseDoraArticleNumber(reqId);
+        if (n <= 0) return 'dora_other';
+        if (n <= 4) return 'dora_1_4';
+        if (n <= 9) return 'dora_5_9';
+        if (n <= 14) return 'dora_10_14';
+        if (n <= 19) return 'dora_15_19';
+        if (n <= 24) return 'dora_20_24';
+        if (n <= 29) return 'dora_25_29';
+        return 'dora_30_plus';
+      }
+      return 'other';
+    }
+
+    function getCategoryOrder(fw) {
+      if (fw === 'iso27001') {
+        return ['iso_organizational', 'iso_people', 'iso_physical', 'iso_technological', 'iso_other'];
+      }
+      if (fw === 'nis2') {
+        return ['nis2_art20', 'nis2_art212', 'nis2_art23', 'nis2_other'];
+      }
+      if (fw === 'dora') {
+        return ['dora_1_4', 'dora_5_9', 'dora_10_14', 'dora_15_19', 'dora_20_24', 'dora_25_29', 'dora_30_plus', 'dora_other'];
+      }
+      return ['other'];
+    }
+
+    const CATEGORY_LABEL_UI_KEYS = {
+      iso_organizational: 'categoryIsoOrganizational',
+      iso_people: 'categoryIsoPeople',
+      iso_physical: 'categoryIsoPhysical',
+      iso_technological: 'categoryIsoTechnological',
+      iso_other: 'categoryOther',
+      nis2_art20: 'categoryNis2Art20',
+      nis2_art212: 'categoryNis2Art212',
+      nis2_art23: 'categoryNis2Art23',
+      nis2_other: 'categoryOther',
+      dora_1_4: 'categoryDora1_4',
+      dora_5_9: 'categoryDora5_9',
+      dora_10_14: 'categoryDora10_14',
+      dora_15_19: 'categoryDora15_19',
+      dora_20_24: 'categoryDora20_24',
+      dora_25_29: 'categoryDora25_29',
+      dora_30_plus: 'categoryDora30_plus',
+      dora_other: 'categoryOther',
+      other: 'categoryOther'
+    };
+
+    function getCategoryUiLabel(catKey, ui) {
+      const uik = CATEGORY_LABEL_UI_KEYS[catKey];
+      return uik && ui[uik] ? ui[uik] : catKey;
+    }
+
+    function checklistSectionDomId(catKey) {
+      return 'checklist-section-' + String(catKey).replace(/[^a-zA-Z0-9_-]/g, '_');
+    }
+
+    function groupIdsByCategory(ids, fw) {
+      const order = getCategoryOrder(fw);
+      const buckets = {};
+      ids.forEach(id => {
+        const k = getRequirementCategoryKey(id, fw);
+        if (!buckets[k]) buckets[k] = [];
+        buckets[k].push(id);
+      });
+      Object.keys(buckets).forEach(k => {
+        buckets[k].sort(sortReqIds);
+      });
+      const seen = new Set();
+      const out = [];
+      order.forEach(k => {
+        if (buckets[k] && buckets[k].length) {
+          out.push({ key: k, ids: buckets[k] });
+          seen.add(k);
+        }
+      });
+      Object.keys(buckets).forEach(k => {
+        if (!seen.has(k) && buckets[k].length) {
+          out.push({ key: k, ids: buckets[k] });
+        }
+      });
+      return out;
+    }
+
+    function buildArticleButtonRows(ids, fw) {
+      const countHtmlFor = reqId => {
+        const count = getGlobalMappingCountForReq(reqId, fw);
+        return checklistMode === 'all'
+          ? ` <span class="article-count">(${count})</span>`
+          : '';
+      };
+      return ids.map(reqId => {
+        const preview = getReqTitleLine(reqId);
+        const countHtml = countHtmlFor(reqId);
+        return `
+          <button type="button" class="article-btn" data-article="${escapeHtml(reqId)}">
+            <span class="article-id">${escapeHtml(reqId)}</span>
+            <span class="article-preview">${escapeHtml(preview)}</span>${countHtml}
+          </button>`;
+      }).join('');
+    }
+
+    function renderChecklistGroupedHtml(ids, fw, ui) {
+      const groups = groupIdsByCategory(ids, fw);
+      if (groups.length <= 1) {
+        const flat = groups.length ? groups[0].ids : [];
+        return (
+          '<div class="article-buttons" id="articleButtons">' +
+          buildArticleButtonRows(flat, fw) +
+          '</div>'
+        );
+      }
+      const pills = groups
+        .map(g => {
+          const sid = checklistSectionDomId(g.key);
+          const label = escapeHtml(getCategoryUiLabel(g.key, ui));
+          return (
+            '<button type="button" class="checklist-cat-pill" data-scroll-target="' +
+            escapeHtml(sid) +
+            '">' +
+            label +
+            '</button>'
+          );
+        })
+        .join('');
+      const sections = groups
+        .map(g => {
+          const sid = checklistSectionDomId(g.key);
+          const h = escapeHtml(getCategoryUiLabel(g.key, ui));
+          const n = g.ids.length;
+          const rows = buildArticleButtonRows(g.ids, fw);
+          return (
+            '<details class="checklist-cat-details" id="' +
+            escapeHtml(sid) +
+            '">' +
+            '<summary class="checklist-cat-summary">' +
+            h +
+            ' <span class="checklist-cat-count">(' +
+            n +
+            ')</span></summary>' +
+            '<div class="article-buttons">' +
+            rows +
+            '</div></details>'
+          );
+        })
+        .join('');
+      return (
+        '<div class="checklist-panel-stack">' +
+        '<nav class="checklist-cat-strip" aria-label="' +
+        escapeHtml(ui.checklistCatNavLabel) +
+        '">' +
+        pills +
+        '</nav>' +
+        '<div class="checklist-cat-body" id="checklistCatBody">' +
+        sections +
+        '</div></div>'
+      );
+    }
+
     function formatRequirementNis2(articleText) {
       const entry = NISG_RIS[articleText];
       const ui = UI_LANG[currentLang];
@@ -3647,6 +4202,69 @@
         return `<span class="flow-step${n === activeStep ? ' active' : ''}">${n}. ${escapeHtml(ui[key])}</span>`;
       }
       return `<div class="explorer-flow">${step(1, 'flowStep1')}${step(2, 'flowStep2')}${step(3, 'flowStep3')}</div>`;
+    }
+
+    const DETAIL_REQ_PREVIEW = 5;
+
+    function initDetailTabControls(root) {
+      if (!root) return;
+      root.querySelectorAll('.detail-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-detail-tab');
+          if (!id) return;
+          root.querySelectorAll('.detail-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+          root.querySelectorAll('.detail-tab-panel').forEach(p => {
+            p.classList.toggle('active', p.getAttribute('data-panel') === id);
+          });
+        });
+      });
+    }
+
+    function renderCollapsibleRequirements(reqList) {
+      if (!reqList || !reqList.length) {
+        return '<p class="detail-meta">' + escapeHtml(currentLang === 'en' ? 'No requirements mapped.' : 'Keine Anforderungen zugeordnet.') + '</p>';
+      }
+      if (reqList.length <= DETAIL_REQ_PREVIEW) {
+        return '<div class="nis2-list">' + reqList.map(formatRequirementId).join('') + '</div>';
+      }
+      const head = reqList.slice(0, DETAIL_REQ_PREVIEW).map(formatRequirementId).join('');
+      const tail = reqList.slice(DETAIL_REQ_PREVIEW).map(formatRequirementId).join('');
+      const summary =
+        currentLang === 'en'
+          ? 'Show all ' + reqList.length + ' requirements'
+          : 'Alle ' + reqList.length + ' Anforderungen anzeigen';
+      return (
+        '<div class="nis2-list">' +
+        head +
+        '</div>' +
+        '<details class="detail-req-details"><summary>' +
+        escapeHtml(summary) +
+        '</summary><div class="nis2-list nis2-list-continuation">' +
+        tail +
+        '</div></details>'
+      );
+    }
+
+    function buildCollateralShort() {
+      const ui = UI_LANG[currentLang];
+      const header =
+        currentLang === 'en'
+          ? 'Use this mapping in compliance presales conversations.'
+          : 'Mehrwert in Compliance-Presales-Gesprächen.';
+      return (
+        '<div class="detail-section collateral-short">' +
+        '<div class="detail-label">' +
+        escapeHtml(ui.collateralLabel) +
+        '</div>' +
+        '<div class="detail-value">' +
+        '<div>' +
+        escapeHtml(header) +
+        '</div>' +
+        '<div class="nisg-ref"><a href="https://www.sophos.com/de-de/trust" target="_blank" rel="noopener">' +
+        escapeHtml(ui.trustCenterLink) +
+        '</a></div>' +
+        '</div></div>'
+      );
     }
 
     function trustFooterHtml() {
@@ -3848,14 +4466,76 @@
       updateValues();
     }
 
+    function syncToolbarRiskButtonLabel() {
+      const btn = document.getElementById('btnRiskReduction');
+      if (btn) btn.textContent = UI_LANG[currentLang].btnRiskReduction;
+    }
+
+    function closeToolbarRiskPanel() {
+      const panel = document.getElementById('toolbarRiskPanel');
+      const btn = document.getElementById('btnRiskReduction');
+      if (panel) panel.classList.remove('is-open');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleToolbarRiskPanel() {
+      const panel = document.getElementById('toolbarRiskPanel');
+      const btn = document.getElementById('btnRiskReduction');
+      const host = document.getElementById('toolbarRiskHost');
+      if (!panel || !btn || !host || host.hidden) return;
+      if (!panel.innerHTML.trim()) return;
+      const open = !panel.classList.contains('is-open');
+      panel.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    let toolbarRiskOutsideCloseBound = false;
+    function initToolbarRiskControls() {
+      const btn = document.getElementById('btnRiskReduction');
+      if (btn && !btn.dataset.riskToggleBound) {
+        btn.dataset.riskToggleBound = '1';
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          toggleToolbarRiskPanel();
+        });
+      }
+      if (!toolbarRiskOutsideCloseBound) {
+        toolbarRiskOutsideCloseBound = true;
+        document.addEventListener('click', function (e) {
+          const host = document.getElementById('toolbarRiskHost');
+          if (!host || host.hidden) return;
+          if (host.contains(e.target)) return;
+          const panel = document.getElementById('toolbarRiskPanel');
+          if (panel && panel.classList.contains('is-open')) closeToolbarRiskPanel();
+        });
+      }
+    }
+
+    function mountRiskCalculatorToolbar(mapping) {
+      const host = document.getElementById('toolbarRiskHost');
+      const panel = document.getElementById('toolbarRiskPanel');
+      if (!host || !panel) return;
+      syncToolbarRiskButtonLabel();
+      closeToolbarRiskPanel();
+      const html = mapping ? renderRiskCalculatorBlock(mapping) : '';
+      if (!html || !String(html).trim()) {
+        host.hidden = true;
+        panel.innerHTML = '';
+        return;
+      }
+      host.hidden = false;
+      panel.innerHTML = html;
+      initRiskCalculator();
+    }
+
     function showDetail(mapping) {
       const panel = document.getElementById('detailPanel');
       panel.classList.remove('empty');
       const ui = UI_LANG[currentLang];
       const pdcaHtml = renderPdcaBlock(mapping.gse_feature_id, mapping.solution_key);
+      const showPdcaTab = !!String(pdcaHtml).trim();
       const reqList = getRequirementsForMapping(mapping);
-      const nis2ArticlesHtml = reqList.map(formatRequirementId).join('');
-      const collateralText = buildCollateralText(mapping);
+      const reqsHtml = renderCollapsibleRequirements(reqList);
       const reqLabel = getRequirementsLabel();
       const solutionValue =
         mapping.gse_feature_id === 'data_controls_network'
@@ -3863,45 +4543,102 @@
               ? 'NDR – Sophos Switch & Sophos WLAN'
               : 'NDR – Sophos Switch & Sophos WLAN')
           : mapping.solution_key;
-      panel.innerHTML = `
-        ${renderFlowHtml(3)}
-        <h2>${escapeHtml(mapping.gse_label)}</h2>
-        <div class="detail-actions">
-          <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
-            <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
-          </button>
-          <button type="button" onclick="window.__nis2AddToStack && window.__nis2AddToStack()">
-            <span class="icon">✚</span>${escapeHtml(ui.btnAddToStack)}
-          </button>
-          <button type="button" class="secondary" onclick="window.__nis2ShowStack && window.__nis2ShowStack()">
-            <span class="icon">☰</span>${escapeHtml(ui.btnShowStack)}
-          </button>
-          <button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp()">
-            <span class="icon">✎</span>${escapeHtml(ui.btnCopyOpp)}
-          </button>
-          <button type="button" class="secondary" onclick="window.print()">
-            <span class="icon">🖨</span>${escapeHtml(ui.btnPrint)}
-          </button>
-        </div>
-        <div class="detail-section">
-          <div class="detail-label">${escapeHtml(ui.solutionLabel)}</div>
-          <div class="detail-value">${escapeHtml(solutionValue)}</div>
-        </div>
-        ${pdcaHtml}
-        ${renderRiskCalculatorBlock(mapping)}
-        ${renderProofSection()}
-        <div class="detail-section">
-          <div class="detail-label">${escapeHtml(reqLabel)}</div>
-          <div class="nis2-list">
-            ${nis2ArticlesHtml}
-          </div>
-        </div>
-        ${collateralText}
-        <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
-        ${trustFooterHtml()}
-      `;
+
+      const noPdcaMsg =
+        '<p class="detail-meta">' +
+        escapeHtml(currentLang === 'en' ? 'No PDCA cycle for this item.' : 'Kein PDCA-Zyklus für dieses Element.') +
+        '</p>';
+      const tabBar =
+        '<div class="detail-tabs" role="tablist">' +
+        '<button type="button" role="tab" class="detail-tab-btn active" data-detail-tab="overview">' +
+        escapeHtml(ui.tabOverview) +
+        '</button>' +
+        (showPdcaTab
+          ? '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="pdca">' +
+            escapeHtml(ui.tabPdcaRisk) +
+            '</button>'
+          : '') +
+        '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="actions">' +
+        escapeHtml(ui.tabActions) +
+        '</button>' +
+        '</div>';
+
+      const overviewPanel =
+        '<div class="detail-tab-panel active" data-panel="overview">' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(ui.solutionLabel) +
+        '</div>' +
+        '<div class="detail-value">' +
+        escapeHtml(solutionValue) +
+        '</div></div>' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(reqLabel) +
+        '</div>' +
+        reqsHtml +
+        '</div></div>';
+
+      const pdcaTabPanel = showPdcaTab
+        ? '<div class="detail-tab-panel" data-panel="pdca">' +
+          (pdcaHtml || noPdcaMsg) +
+          '</div>'
+        : '';
+
+      const actionsPanel =
+        '<div class="detail-tab-panel" data-panel="actions">' +
+        '<div class="detail-actions">' +
+        '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
+        '<span class="icon">⬅</span>' +
+        escapeHtml(ui.btnHome) +
+        '</button>' +
+        '<button type="button" onclick="window.__nis2AddToStack && window.__nis2AddToStack()">' +
+        '<span class="icon">✚</span>' +
+        escapeHtml(ui.btnAddToStack) +
+        '</button>' +
+        '<button type="button" class="secondary" onclick="window.__nis2ShowStack && window.__nis2ShowStack()">' +
+        '<span class="icon">☰</span>' +
+        escapeHtml(ui.btnShowStack) +
+        '</button>' +
+        '<button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp()">' +
+        '<span class="icon">✎</span>' +
+        escapeHtml(ui.btnCopyOpp) +
+        '</button>' +
+        '<button type="button" class="secondary" onclick="window.print()">' +
+        '<span class="icon">🖨</span>' +
+        escapeHtml(ui.btnPrint) +
+        '</button></div>' +
+        buildCollateralShort() +
+        '<p class="detail-meta">' +
+        escapeHtml(ui.exportLabel) +
+        '</p>' +
+        renderProofSection() +
+        '</div>';
+
+      panel.innerHTML =
+        '<div class="detail-panel-head">' +
+        renderFlowHtml(3) +
+        '<h2>' +
+        escapeHtml(mapping.gse_label) +
+        '</h2>' +
+        tabBar +
+        '</div>' +
+        '<div class="detail-panel-body">' +
+        '<div class="detail-tab-panels">' +
+        overviewPanel +
+        pdcaTabPanel +
+        actionsPanel +
+        '</div></div>' +
+        '<div class="detail-panel-foot">' +
+        '<p class="subtitle">' +
+        escapeHtml(ui.disclaimer) +
+        '</p>' +
+        trustFooterHtml() +
+        '</div>';
+
+      initDetailTabControls(panel);
       attachPanelHandlers(mapping);
-      initRiskCalculator();
+      mountRiskCalculatorToolbar(mapping);
     }
 
     function setActiveBox(id) {
@@ -4078,26 +4815,6 @@
       return id;
     }
 
-    function buildCollateralText(mapping) {
-      const ui = UI_LANG[currentLang];
-      const articles = getRequirementsForMapping(mapping);
-      if (!articles.length) return '';
-      const lines = articles.map(a => '- ' + a + ' – ' + getReqTitleLine(a));
-      const header = currentLang === 'en'
-        ? 'How this supports compliance mapping in presales:'
-        : 'Mehrwert in Compliance-Presales-Gesprächen:';
-      return `
-        <div class="detail-section">
-          <div class="detail-label">${escapeHtml(ui.collateralLabel)}</div>
-          <div class="detail-value">
-            <div>${escapeHtml(header)}</div>
-            <ul>${lines.map(l => '<li>' + escapeHtml(l) + '</li>').join('')}</ul>
-            <div class="nisg-ref"><a href="https://www.sophos.com/de-de/trust" target="_blank" rel="noopener">Sophos Trust Center</a></div>
-          </div>
-        </div>
-      `;
-    }
-
     function buildOpportunitySnippetSingle(mapping) {
       const ui = UI_LANG[currentLang];
       const articles = getRequirementsForMapping(mapping);
@@ -4171,19 +4888,29 @@
           const panel = document.getElementById('detailPanel');
           const ui = UI_LANG[currentLang];
           panel.classList.remove('empty');
-          panel.innerHTML = `
-            <h2>${escapeHtml(ui.stackLabel)}</h2>
-            <div class="detail-actions">
-              <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
-                <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
-              </button>
-            </div>
-            <p class="detail-meta">${escapeHtml(ui.stackHint)}</p>
-            <p>${escapeHtml(ui.stackEmpty)}</p>
-            <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
-          `;
+          panel.innerHTML =
+            '<div class="detail-panel-head">' +
+            '<h2>' +
+            escapeHtml(ui.stackLabel) +
+            '</h2>' +
+            '<div class="detail-actions">' +
+            '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
+            '<span class="icon">⬅</span>' +
+            escapeHtml(ui.btnHome) +
+            '</button></div>' +
+            '<p class="detail-meta">' +
+            escapeHtml(ui.stackHint) +
+            '</p></div>' +
+            '<div class="detail-panel-body"><div class="detail-scroll-region">' +
+            '<p>' +
+            escapeHtml(ui.stackEmpty) +
+            '</p></div></div>' +
+            '<div class="detail-panel-foot"><p class="subtitle">' +
+            escapeHtml(ui.disclaimer) +
+            '</p></div>';
           currentMode = 'stack';
           document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => b.classList.remove('active'));
+          mountRiskCalculatorToolbar(null);
           return;
         }
         currentMode = 'stack';
@@ -4198,7 +4925,7 @@
             if (!allArticles.includes(a)) allArticles.push(a);
           });
         });
-        const nis2Html = allArticles.map(formatRequirementId).join('');
+        const nis2Html = renderCollapsibleRequirements(allArticles);
         const articleMappingHtml = allArticles.map(articleKey => {
           const title = getReqTitleLine(articleKey);
           const sols = mappings
@@ -4213,37 +4940,82 @@
               : '') +
             '</div>';
         }).join('');
+        const stackTabBar =
+          '<div class="detail-tabs" role="tablist">' +
+          '<button type="button" role="tab" class="detail-tab-btn active" data-detail-tab="overview">' +
+          escapeHtml(ui.tabOverview) +
+          '</button>' +
+          '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="stackmap">' +
+          escapeHtml(ui.tabStackMap) +
+          '</button>' +
+          '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="actions">' +
+          escapeHtml(ui.tabActions) +
+          '</button>' +
+          '</div>';
+        const stackOverviewPanel =
+          '<div class="detail-tab-panel active" data-panel="overview">' +
+          '<div class="detail-section">' +
+          '<div class="detail-label">' +
+          escapeHtml(ui.solutionLabel) +
+          '</div>' +
+          '<div class="detail-value">' +
+          escapeHtml(solKeys.join(', ')) +
+          '</div></div>' +
+          '<div class="detail-section">' +
+          '<div class="detail-label">' +
+          escapeHtml(getRequirementsLabel()) +
+          '</div>' +
+          nis2Html +
+          '</div></div>';
+        const stackMapPanel =
+          '<div class="detail-tab-panel" data-panel="stackmap">' +
+          '<div class="detail-section">' +
+          '<div class="detail-label">' +
+          escapeHtml(getRequirementsLabel()) +
+          '</div>' +
+          '<div class="nis2-list">' +
+          articleMappingHtml +
+          '</div></div></div>';
+        const stackActionsPanel =
+          '<div class="detail-tab-panel" data-panel="actions">' +
+          '<div class="detail-actions">' +
+          '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
+          '<span class="icon">⬅</span>' +
+          escapeHtml(ui.btnHome) +
+          '</button>' +
+          '<button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp(\'stack\')">' +
+          '<span class="icon">✎</span>' +
+          escapeHtml(ui.btnCopyOpp) +
+          '</button>' +
+          '<button type="button" class="secondary" onclick="window.__nis2ClearStack && window.__nis2ClearStack()">' +
+          '<span class="icon">✕</span>' +
+          escapeHtml(ui.btnClearStack) +
+          '</button>' +
+          '<button type="button" class="secondary" onclick="window.print()">' +
+          '<span class="icon">🖨</span>' +
+          escapeHtml(ui.btnPrint) +
+          '</button></div>' +
+          buildCollateralShort() +
+          '</div>';
         panel.classList.remove('empty');
-        panel.innerHTML = `
-          <h2>${escapeHtml(ui.stackLabel)}</h2>
-          <div class="detail-actions">
-            <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
-              <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
-            </button>
-            <button type="button" class="secondary" onclick="window.__nis2CopyOpp && window.__nis2CopyOpp('stack')">
-              <span class="icon">✎</span>${escapeHtml(ui.btnCopyOpp)}
-            </button>
-            <button type="button" class="secondary" onclick="window.__nis2ClearStack && window.__nis2ClearStack()">
-              <span class="icon">✕</span>${escapeHtml(ui.btnClearStack)}
-            </button>
-            <button type="button" class="secondary" onclick="window.print()">
-              <span class="icon">🖨</span>${escapeHtml(ui.btnPrint)}
-            </button>
-          </div>
-          <div class="detail-section">
-            <div class="detail-label">${escapeHtml(ui.solutionLabel)}</div>
-            <div class="detail-value">${escapeHtml(solKeys.join(', '))}</div>
-          </div>
-          <div class="detail-section">
-            <div class="detail-label">${escapeHtml(getRequirementsLabel())}</div>
-            <div class="nis2-list">${nis2Html}</div>
-          </div>
-          <div class="detail-section">
-            <div class="detail-label">${escapeHtml(getRequirementsLabel())}</div>
-            <div class="nis2-list">${articleMappingHtml}</div>
-          </div>
-          <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
-        `;
+        panel.innerHTML =
+          '<div class="detail-panel-head">' +
+          '<h2>' +
+          escapeHtml(ui.stackLabel) +
+          '</h2>' +
+          stackTabBar +
+          '</div>' +
+          '<div class="detail-panel-body">' +
+          '<div class="detail-tab-panels">' +
+          stackOverviewPanel +
+          stackMapPanel +
+          stackActionsPanel +
+          '</div></div>' +
+          '<div class="detail-panel-foot"><p class="subtitle">' +
+          escapeHtml(ui.disclaimer) +
+          '</p></div>';
+        initDetailTabControls(panel);
+        mountRiskCalculatorToolbar(null);
         document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
           const id = b.dataset.id;
           b.classList.toggle('active', stackSelection.has(id));
@@ -4352,40 +5124,30 @@
       const stepEl = document.getElementById('stepBadge');
       if (stepEl) stepEl.textContent = ui.stepBadge;
       const ids = getChecklistIds();
-      const buttonsHtml = ids.map(reqId => {
-        const preview = getReqTitleLine(reqId);
-        const count = getGlobalMappingCountForReq(reqId, currentFramework);
-        const countHtml = checklistMode === 'all'
-          ? ` <span class="article-count">(${count})</span>`
-          : '';
-        return `
-          <button type="button" class="article-btn" data-article="${escapeHtml(reqId)}">
-            <span class="article-id">${escapeHtml(reqId)}</span>
-            <span class="article-preview">${escapeHtml(preview)}</span>${countHtml}
-          </button>`;
-      }).join('');
+      const checklistHtml = renderChecklistGroupedHtml(ids, currentFramework, ui);
       panel.classList.add('empty');
-      panel.innerHTML = `
-        ${renderFlowHtml(1)}
-        <div class="detail-section">
-          <div class="detail-label">${escapeHtml(ui.filterLabel)}</div>
-          <div class="article-buttons" id="articleButtons">${buttonsHtml}</div>
-        </div>
-        <p>${escapeHtml(ui.emptyPanel)}</p>
-        ${trustFooterHtml()}
-      `;
-      const container = document.getElementById('articleButtons');
-      if (container) {
-        container.addEventListener('click', (e) => {
-          const btn = e.target.closest('.article-btn[data-article]');
-          if (btn && btn.dataset.article) {
-            showArticleView(btn.dataset.article);
-          }
-        });
-      }
+      panel.innerHTML =
+        '<div class="detail-panel-head">' +
+        renderFlowHtml(1) +
+        '<p class="detail-empty-intro">' +
+        escapeHtml(ui.emptyPanel) +
+        '</p></div>' +
+        '<div class="detail-panel-body">' +
+        '<div class="detail-scroll-region">' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(ui.filterLabel) +
+        '</div>' +
+        checklistHtml +
+        '</div></div></div>' +
+        '<div class="detail-panel-foot">' +
+        trustFooterHtml() +
+        '</div>';
+      mountRiskCalculatorToolbar(null);
     }
 
     function showArticleView(articleKey) {
+      mountRiskCalculatorToolbar(null);
       currentMode = 'article';
       selectedRequirementKey = articleKey;
       const panel = document.getElementById('detailPanel');
@@ -4413,26 +5175,69 @@
       const mapLine = (currentLang === 'en')
         ? `${mapCount} mapping(s) to Sophos solutions / platform`
         : `${mapCount} Zuordnung(en) zu Sophos-Lösungen / Plattform`;
-      panel.innerHTML = `
-        ${renderFlowHtml(2)}
-        <div class="detail-actions">
-          <button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">
-            <span class="icon">⬅</span>${escapeHtml(ui.btnHome)}
-          </button>
-        </div>
-        <p class="detail-meta">${escapeHtml(mapLine)}</p>
-        <h2>${escapeHtml(articleKey)}</h2>
-        <div class="detail-section">
-          <div class="detail-label">${escapeHtml(getRequirementsLabel())}</div>
-          <div class="detail-value">${escapeHtml(title)}</div>
-        </div>
-        <div class="detail-section">
-          <div class="detail-label">${escapeHtml(ui.solutionLabel)}</div>
-          <ul id="articleSolutionList">${listItems}</ul>
-        </div>
-        <p class="subtitle">${escapeHtml(ui.disclaimer)}</p>
-        ${trustFooterHtml()}
-      `;
+      const articleTabBar =
+        '<div class="detail-tabs" role="tablist">' +
+        '<button type="button" role="tab" class="detail-tab-btn active" data-detail-tab="artreq">' +
+        escapeHtml(ui.tabArticleReq) +
+        '</button>' +
+        '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="artmap">' +
+        escapeHtml(ui.tabArticleMap) +
+        '</button>' +
+        '<button type="button" role="tab" class="detail-tab-btn" data-detail-tab="actions">' +
+        escapeHtml(ui.tabActions) +
+        '</button>' +
+        '</div>';
+      const articleReqPanel =
+        '<div class="detail-tab-panel active" data-panel="artreq">' +
+        '<p class="detail-meta">' +
+        escapeHtml(mapLine) +
+        '</p>' +
+        '<h2 class="detail-article-heading">' +
+        escapeHtml(articleKey) +
+        '</h2>' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(getRequirementsLabel()) +
+        '</div>' +
+        '<div class="detail-value">' +
+        escapeHtml(title) +
+        '</div></div></div>';
+      const articleMapPanel =
+        '<div class="detail-tab-panel" data-panel="artmap">' +
+        '<div class="detail-section">' +
+        '<div class="detail-label">' +
+        escapeHtml(ui.solutionLabel) +
+        '</div>' +
+        '<ul id="articleSolutionList">' +
+        listItems +
+        '</ul></div></div>';
+      const articleActionsPanel =
+        '<div class="detail-tab-panel" data-panel="actions">' +
+        '<div class="detail-actions">' +
+        '<button type="button" class="secondary" onclick="window.__nis2Home && window.__nis2Home()">' +
+        '<span class="icon">⬅</span>' +
+        escapeHtml(ui.btnHome) +
+        '</button></div>' +
+        buildCollateralShort() +
+        '</div>';
+      panel.innerHTML =
+        '<div class="detail-panel-head">' +
+        renderFlowHtml(2) +
+        articleTabBar +
+        '</div>' +
+        '<div class="detail-panel-body">' +
+        '<div class="detail-tab-panels">' +
+        articleReqPanel +
+        articleMapPanel +
+        articleActionsPanel +
+        '</div></div>' +
+        '<div class="detail-panel-foot">' +
+        '<p class="subtitle">' +
+        escapeHtml(ui.disclaimer) +
+        '</p>' +
+        trustFooterHtml() +
+        '</div>';
+      initDetailTabControls(panel);
       document.querySelectorAll('.box, .datalake-btn, .layer-footer-line').forEach(b => {
         const id = b.dataset.id;
         const mapping = mapById[id];
@@ -4503,6 +5308,31 @@
           u.searchParams.set('trust', trustMode);
           window.history.replaceState({}, '', u.toString());
         } catch (_) {}
+      });
+    })();
+
+    initToolbarRiskControls();
+
+    (function initDetailPanelChecklistDelegation() {
+      const dp = document.getElementById('detailPanel');
+      if (!dp || dp.dataset.checklistDelegationBound === '1') return;
+      dp.dataset.checklistDelegationBound = '1';
+      dp.addEventListener('click', function onDetailPanelChecklistClick(e) {
+        const pill = e.target.closest('.checklist-cat-pill[data-scroll-target]');
+        if (pill) {
+          const tid = pill.getAttribute('data-scroll-target');
+          const el = tid && document.getElementById(tid);
+          if (el) {
+            if (el instanceof HTMLDetailsElement) el.open = true;
+            el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          }
+          return;
+        }
+        if (!dp.classList.contains('empty')) return;
+        const reqBtn = e.target.closest('.article-btn[data-article]');
+        if (reqBtn && reqBtn.dataset.article) {
+          showArticleView(reqBtn.dataset.article);
+        }
       });
     })();
 
