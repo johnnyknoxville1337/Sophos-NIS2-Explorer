@@ -4,7 +4,7 @@ This document describes **usage and user flow** of the interactive single-page a
 
 ## Summary
 
-The explorer presents the **Sophos Central Platform** as a layered diagram and links individual **GSE platform features** (tiles) to requirements from **NIS2**, **ISO/IEC 27001:2022 Annex A**, **DORA**, and **BSI** catalogues (e.g. Grundschutz++). It targets **presales and solution mapping**: mappings are **illustrative**; authoritative wording and certifications are with primary sources and the [Sophos Trust Center](https://www.sophos.com/en-us/trust). **Not legal advice.** For context see [`assets/explorer-recht-trust.md`](assets/explorer-recht-trust.md).
+The explorer presents the **Sophos Central Platform** as a layered diagram and links individual **GSE platform features** (tiles) to requirements from **NIS2**, **ISO/IEC 27001:2022 Annex A**, **DORA**, and **BSI** catalogues (e.g. Grundschutz++). It targets **presales and solution mapping**: mappings are **illustrative**; authoritative wording and certifications are with primary sources and the [Sophos Trust Center](https://www.sophos.com/en-us/trust). **Not legal advice.**
 
 ## Getting started
 
@@ -64,7 +64,7 @@ Dieses Dokument beschreibt die **Bedienung und den Nutzerfluss** der interaktive
 
 ## Kurzbeschreibung
 
-Der Explorer zeigt die **Sophos Central Platform** als geschichtetes Diagramm und verknüpft einzelne **GSE-Plattform-Features** (Kacheln) mit Anforderungen aus **NIS2**, **ISO/IEC 27001:2022 Anhang A**, **DORA** und **BSI**-Katalogen (z. B. Grundschutz++). Er richtet sich an **Presales und Solution Mapping**: Die Zuordnungen sind **illustrativ**; verbindliche Texte und Zertifizierungen liegen bei den Primärquellen bzw. beim [Sophos Trust Center](https://www.sophos.com/de-de/trust). **Keine Rechtsberatung.** Zur Einordnung siehe [`assets/explorer-recht-trust.md`](assets/explorer-recht-trust.md).
+Der Explorer zeigt die **Sophos Central Platform** als geschichtetes Diagramm und verknüpft einzelne **GSE-Plattform-Features** (Kacheln) mit Anforderungen aus **NIS2**, **ISO/IEC 27001:2022 Anhang A**, **DORA** und **BSI**-Katalogen (z. B. Grundschutz++). Er richtet sich an **Presales und Solution Mapping**: Die Zuordnungen sind **illustrativ**; verbindliche Texte und Zertifizierungen liegen bei den Primärquellen bzw. beim [Sophos Trust Center](https://www.sophos.com/de-de/trust). **Keine Rechtsberatung.**
 
 ## Start
 
