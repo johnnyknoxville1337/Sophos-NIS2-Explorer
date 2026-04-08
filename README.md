@@ -1,6 +1,6 @@
 # Complydance — How it works
 
-This document describes **usage and user flow** of the interactive single-page app [`gse-platform-nis2-explorer.html`](gse-platform-nis2-explorer.html).
+This document describes **usage and user flow** of the interactive single-page app.
 
 ## Summary
 
@@ -60,7 +60,7 @@ flowchart LR
 
 # Complydance — Funktionsweise
 
-Dieses Dokument beschreibt die **Bedienung und den Nutzerfluss** der interaktiven Single-Page-App [`gse-platform-nis2-explorer.html`](gse-platform-nis2-explorer.html).
+Dieses Dokument beschreibt die **Bedienung und den Nutzerfluss** der interaktiven Single-Page-App.
 
 ## Kurzbeschreibung
 
