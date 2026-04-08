@@ -8,7 +8,7 @@
     ?framework=nis2|iso27001|dora|bsi   Aktives Framework (Standard: nis2)
     ?bsi_catalog=<id>     Bei framework=bsi: Unterkatalog (z.B. grundschutz_pp); Standard: erster geladener Katalog
     ?select=<id>          Element beim Laden vorauswählen (z.B. managed_services_mdr)
-    ?gaps=1               Kontrollliste „Lücken“ (Prüfscope + qualifizierte Abdeckung)
+    ?gaps=1               Kontrollliste „Gap“ (Prüfscope + qualifizierte Abdeckung)
 
   Kombinierbar: ?embed=1&lang=en&framework=bsi&bsi_catalog=grundschutz_pp&select=data_controls_firewall
 
@@ -1448,7 +1448,7 @@
             <div class="checklist-filter" id="checklistFilter" role="group" aria-label="Kontrollliste">
               <button type="button" data-mode="all" class="active">Alle</button>
               <button type="button" data-mode="relevant">Nur zutreffende</button>
-              <button type="button" data-mode="gaps" id="btnGaps" title="Nur Lücken (Prüfscope)">Lücken</button>
+              <button type="button" data-mode="gaps" id="btnGaps" title="Nur Gap (Prüfscope)">Gap</button>
             </div>
             <div class="toolbar-risk-host" id="toolbarRiskHost" hidden>
               <button type="button" class="toolbar-risk-toggle" id="btnRiskReduction" aria-expanded="false" aria-controls="toolbarRiskPanel">Risikoreduktion</button>
@@ -7998,7 +7998,8 @@
         flowStep3: "Abdeckung",
         checklistAll: "Alle",
         checklistRelevant: "Nur zutreffende",
-        checklistGaps: "Lücken",
+        checklistGaps: "Gap",
+        checklistGapsTitle: "Nur Gap (Prüfscope)",
         reqsLabelNis2: "NIS-2 / NISG – Anforderungen",
         reqsLabelIso: "ISO/IEC 27001:2022 – Anhang A (Kontrollen)",
         reqsLabelDora: "DORA – Artikel",
@@ -8081,8 +8082,9 @@
         flowStep2: "Platform",
         flowStep3: "Coverage",
         checklistAll: "All",
-        checklistRelevant: "Relevant only",
-        checklistGaps: "Gaps",
+        checklistRelevant: "relevant",
+        checklistGaps: "Gap",
+        checklistGapsTitle: "Gap only (audit scope)",
         reqsLabelNis2: "NIS-2 / NISG – Requirements",
         reqsLabelIso: "ISO/IEC 27001:2022 – Annex A (controls)",
         reqsLabelDora: "DORA – Articles",
@@ -8745,6 +8747,19 @@
       });
     }
 
+    function syncChecklistFilterLabels() {
+      const ui = UI_LANG[currentLang];
+      document.querySelectorAll('#checklistFilter button[data-mode]').forEach(b => {
+        const mode = b.dataset.mode;
+        if (mode === 'all') b.textContent = ui.checklistAll;
+        if (mode === 'relevant') b.textContent = ui.checklistRelevant;
+        if (mode === 'gaps') {
+          b.textContent = ui.checklistGaps;
+          if (ui.checklistGapsTitle) b.title = ui.checklistGapsTitle;
+        }
+      });
+    }
+
     function refillBsiCatalogSelectOptions() {
       const sel = document.getElementById('bsiCatalogSelect');
       if (!sel) return;
@@ -9259,6 +9274,7 @@
       refillBsiCatalogSelectOptions();
       updateFrameworkSubtitle();
       syncToolbarStackButtonLabel();
+      syncChecklistFilterLabels();
       const stepEl = document.getElementById('stepBadge');
       if (stepEl) stepEl.textContent = UI_LANG[currentLang].stepBadge;
       if (currentMapping) {
@@ -9893,6 +9909,8 @@
       const langParam = params.get('lang');
       if (langParam === 'en') {
         switchLanguage('en');
+      } else {
+        syncChecklistFilterLabels();
       }
       const selectId = params.get('select');
       if (selectId) {
