@@ -1,4 +1,4 @@
-# Complydance — How it works
+# Complydance — How it works 
 
 This document describes **usage and user flow** of the interactive single-page app.
 
